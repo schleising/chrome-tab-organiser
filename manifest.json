@@ -7,7 +7,11 @@
     "default_popup": "tabs.html",
     "default_icon": "tabs.png"
   },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
   "permissions": [
+    "storage",
     "tabs",
     "tabGroups"
   ]

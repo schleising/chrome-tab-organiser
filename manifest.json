@@ -1,0 +1,14 @@
+{
+  "name": "Auto Tab Grouper",
+  "description": "Automatically groups tabs based on their URLs.",
+  "version": "0.1",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "tabs.html",
+    "default_icon": "tabs.png"
+  },
+  "permissions": [
+    "tabs",
+    "tabGroups"
+  ]
+}

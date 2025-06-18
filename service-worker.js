@@ -58,6 +58,9 @@ chrome.runtime.onInstalled.addListener(async () => {
                 return;
             }
 
+            /* @type {boolean} */
+            let isGrouped = false;
+
             // Check whether the updated tab's URL matches any of the stored groups
             for (const group of storedGroups.groups) {
                 for (const url of group.urls) {
@@ -81,7 +84,10 @@ chrome.runtime.onInstalled.addListener(async () => {
                         // Update the group title, colour and index to be after the last pinned tab
                         if (groupId) {
                             // Get the currently pinned tabs to determine the index
-                            const pinnedTabs = await chrome.tabs.query({ pinned: true });
+                            const pinnedTabs = await chrome.tabs.query({
+                                currentWindow: true,
+                                pinned: true
+                            });
 
                             // Update the group with the new title and colour
                             await chrome.tabGroups.update(groupId, {
@@ -95,8 +101,29 @@ chrome.runtime.onInstalled.addListener(async () => {
                             });
                         }
 
+                        // Mark as grouped
+                        isGrouped = true;
+
                         break; // No need to check other URLs in this group
                     }
+                }
+            }
+
+            // If the tab was not grouped, move it to after the last tab
+            if (!isGrouped) {
+                // Get all tabs in the current window
+                const allTabs = await chrome.tabs.query({ currentWindow: true });
+
+                // Get the maximum index of tabs which are in a group
+                const maxIndex = allTabs.reduce((max, tab) => {
+                    return tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? Math.max(max, tab.index) : max;
+                }, -1);
+
+                // If the current tab index is less than or equal to the maximum index, move it to the end
+                if (updatedTab.index <= maxIndex) {
+                    chrome.tabs.move(updatedTabId, {
+                        index: -1 // Move to the end of the tab list
+                    });
                 }
             }
         }

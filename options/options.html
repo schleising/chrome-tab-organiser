@@ -15,9 +15,9 @@
   <div class="new-group">
     <h2>Create New Group</h2>
     <label for="group-name">Group Name:</label>
-    <input type="text" id="group-name" name="group-name" required>
+    <input type="text" id="group-name" name="group-name" class="group-input" required>
     <label for="group-urls">Group Urls:</label>
-    <input type="text" id="group-urls" name="group-urls" required>
+    <input type="text" id="group-urls" name="group-urls" class="group-input" required>
     <label for="group-colour">Group Colour:</label>
     <select id="group-colour" name="group-colour" required>
       <option value="blue">Blue</option>
@@ -31,6 +31,7 @@
       <option value="cyan">Cyan</option>
     </select>
     <button type="submit" id="create-group">Create Group</button>
+    <p id="group-error" class="error-message"></p>
   </div>
   <div class="existing-group-container" id="existing-group-container"></div>
   <script src="options.js"></script>

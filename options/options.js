@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Add event listener for the "Create Group" button
     const createGroupButton = document.getElementById('create-group');
     createGroupButton.addEventListener('click', async () => {
+        // Clear any previous error messages
+        document.getElementById('group-error').textContent = "";
+
         // Get the group name and colour from the input fields
         const groupName = document.getElementById('group-name').value.trim();
         const groupColour = document.getElementById('group-colour').value.trim();
@@ -15,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Validate inputs
         if (!groupName || !groupColour || !groupUrls) {
-            alert("Please enter a valid group name and colour.");
+            document.getElementById('group-error').textContent = "Invalid input: group name, colour, and URLs are required.";
             return;
         }
 
@@ -30,7 +33,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Store the new group in local storage
         let storedGroups = await chrome.storage.local.get('tab_groups');
         storedGroups = storedGroups.tab_groups || [];
-        storedGroups.push(newGroup);
+
+        // If a group with the same name exists, update it instead of creating a new one
+        const existingGroupIndex = storedGroups.findIndex(g => g.name === newGroup.name);
+        if (existingGroupIndex !== -1) {
+            // Update the existing group
+            storedGroups[existingGroupIndex] = newGroup;
+        } else {
+            // Add the new group to the list
+            storedGroups.push(newGroup);
+        }
         await chrome.storage.local.set({ tab_groups: storedGroups });
 
         // Refresh the options UI to show the new group
@@ -38,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Clear input fields
         document.getElementById('group-name').value = '';
-        document.getElementById('group-colour').value = '';
+        document.getElementById('group-colour').value = 'blue';
         document.getElementById('group-urls').value = '';
     });
 });
@@ -77,6 +89,34 @@ async function getStoredGroups() {
             groupUrlsElement.appendChild(urlElement);
         });
         groupElement.appendChild(groupUrlsElement);
+
+        const groupButtonElement = document.createElement('div');
+        groupButtonElement.className = 'existing-group-buttons';
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete Group';
+        deleteButton.addEventListener('click', async () => {
+            // Remove the group from storage
+            let storedGroups = await chrome.storage.local.get('tab_groups');
+            storedGroups = storedGroups.tab_groups || [];
+            storedGroups = storedGroups.filter(g => g.name !== group.name);
+            await chrome.storage.local.set({ tab_groups: storedGroups });
+
+            // Refresh the options UI
+            await getStoredGroups();
+        });
+        groupButtonElement.appendChild(deleteButton);
+
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit Group';
+        editButton.addEventListener('click', () => {
+            // Populate the input fields with the group's data for editing
+            document.getElementById('group-name').value = group.name;
+            document.getElementById('group-colour').value = group.colour;
+            document.getElementById('group-urls').value = group.urls.join(', ');
+        });
+        groupButtonElement.appendChild(editButton);
+
+        groupElement.appendChild(groupButtonElement);
 
         optionsContainer.appendChild(groupElement);
     });

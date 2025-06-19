@@ -9,10 +9,6 @@
     "48": "icons/tabs48.png",
     "128": "icons/tabs128.png"
   },
-  "action": {
-    "default_popup": "popup/tabs-popup.html",
-    "default_icon": "icons/tabs16.png"
-  },
   "background": {
     "service_worker": "service-worker/service-worker.js"
   },
@@ -20,5 +16,6 @@
     "storage",
     "tabs",
     "tabGroups"
-  ]
+  ],
+  "incognito": "not_allowed"
 }

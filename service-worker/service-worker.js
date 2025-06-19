@@ -40,6 +40,9 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             return;
         }
 
+        let tab_url = new URL(updatedTab.url);
+        let tab_hostname = tab_url.hostname;
+
         /* @type {boolean} */
         let isGrouped = false;
 
@@ -49,7 +52,7 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             console.log(`Checking group: ${group.name} with URLs: ${group.urls.join(', ')}`);
             for (const url of group.urls) {
                 console.log(`Checking if ${updatedTab.url} matches group URL: ${url}`);
-                if (updatedTab.url && updatedTab.url.startsWith(url.replace('*', ''))) {
+                if (tab_hostname.includes(url)) {
                     const matchingGroups = await chrome.tabGroups.query({
                         title: group.name
                     });

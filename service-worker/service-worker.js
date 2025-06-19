@@ -52,7 +52,7 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             console.log(`Checking group: ${group.name} with URLs: ${group.urls.join(', ')}`);
             for (const url of group.urls) {
                 console.log(`Checking if ${updatedTab.url} matches group URL: ${url}`);
-                if (tab_hostname.includes(url)) {
+                if (tab_hostname.toLowerCase().includes(url.toLowerCase())) {
                     const matchingGroups = await chrome.tabGroups.query({
                         title: group.name
                     });

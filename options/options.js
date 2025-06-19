@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         /** @type {StoredGroup} */
         const newGroup = {
             name: groupName,
-            urls: groupUrls.split(',').map(url => url.trim()), // Split URLs by comma and trim whitespace
+            urls: groupUrls.split(',').map(url => url.trim().toLowerCase()), // Split URLs by comma and trim whitespace
             colour: groupColour
         };
 

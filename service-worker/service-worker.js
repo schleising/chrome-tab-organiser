@@ -12,7 +12,6 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 // Add a listener for tab updates
 chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) => {
-    console.log("Tab updated:", updatedTabId, changeInfo, updatedTab);
     // Check if the updated tab is the one we are interested in
     if (changeInfo.status === 'complete') {
         // Get the stored groups from local storage
@@ -20,23 +19,18 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
         let storedGroups = await chrome.storage.local.get('tab_groups');
         storedGroups = storedGroups.tab_groups || [];
 
-        console.log("Stored groups (SW):", storedGroups);
-
         // If the tab is already grouped, do nothing
         if (updatedTab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
-            console.log(`Tab ${updatedTabId} is already grouped.`);
             return;
         }
 
         // Skip pinned tabs
         if (updatedTab.pinned) {
-            console.log(`Tab ${updatedTabId} is pinned, skipping grouping.`);
             return;
         }
 
         // Check if there are any groups stored
         if (!storedGroups || !storedGroups || storedGroups.length <= 0) {
-            console.log("No stored groups found, skipping grouping.");
             return;
         }
 
@@ -46,12 +40,9 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
         /* @type {boolean} */
         let isGrouped = false;
 
-        console.log(`Checking if tab ${updatedTabId} matches any stored groups...`);
         // Check whether the updated tab's URL matches any of the stored groups
         for (const group of storedGroups) {
-            console.log(`Checking group: ${group.name} with URLs: ${group.urls.join(', ')}`);
             for (const url of group.urls) {
-                console.log(`Checking if ${updatedTab.url} matches group URL: ${url}`);
                 if (tab_hostname.toLowerCase().includes(url.toLowerCase())) {
                     const matchingGroups = await chrome.tabGroups.query({
                         title: group.name

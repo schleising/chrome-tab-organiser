@@ -4,11 +4,11 @@
   "version": "0.1",
   "manifest_version": 3,
   "action": {
-    "default_popup": "tabs.html",
-    "default_icon": "tabs.png"
+    "default_popup": "popup/tabs-popup.html",
+    "default_icon": "icons/tabs.png"
   },
   "background": {
-    "service_worker": "service-worker.js"
+    "service_worker": "service-worker/service-worker.js"
   },
   "permissions": [
     "storage",

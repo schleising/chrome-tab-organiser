@@ -3,9 +3,15 @@
   "description": "Automatically groups tabs based on their URLs.",
   "version": "0.1",
   "manifest_version": 3,
+  "icons": {
+    "16": "icons/tabs16.png",
+    "32": "icons/tabs32.png",
+    "48": "icons/tabs48.png",
+    "128": "icons/tabs128.png"
+  },
   "action": {
     "default_popup": "popup/tabs-popup.html",
-    "default_icon": "icons/tabs.png"
+    "default_icon": "icons/tabs16.png"
   },
   "background": {
     "service_worker": "service-worker/service-worker.js"

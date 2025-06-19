@@ -9,6 +9,10 @@
     "48": "icons/tabs48.png",
     "128": "icons/tabs128.png"
   },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": false
+  },
   "background": {
     "service_worker": "service-worker/service-worker.js"
   },

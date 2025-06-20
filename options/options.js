@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     createGroupButton.addEventListener('click', async () => {
         // Clear any previous error messages
         document.getElementById('group-error').textContent = "";
+        document.getElementById('group-error').classList.add('hidden');
 
         // Get the group name and colour from the input fields
         const groupName = document.getElementById('group-name').value.trim();
@@ -18,7 +19,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Validate inputs
         if (!groupName || !groupColour || !groupUrls) {
+            // Show error message if inputs are invalid
             document.getElementById('group-error').textContent = "Invalid input: group name, colour, and URLs are required.";
+            document.getElementById('group-error').classList.remove('hidden');
+
+            // Clear the error message after 5 seconds
+            setTimeout(() => {
+                document.getElementById('group-error').textContent = "";
+                document.getElementById('group-error').classList.add('hidden');
+            }, 5000);
             return;
         }
 
@@ -65,23 +74,42 @@ async function getStoredGroups() {
     const optionsContainer = document.getElementById('existing-group-container');
     optionsContainer.innerHTML = ''; // Clear existing content
 
+    // Build the UI for each stored group
     storedGroups.forEach(group => {
+        // Create a new element for the group
         const groupElement = document.createElement('div');
         groupElement.className = 'existing-group';
 
+        // Create the header for the group
         const groupHeaderElement = document.createElement('div');
         groupHeaderElement.className = 'existing-group-header';
 
+        // Create the group name element
         const groupNameElement = document.createElement('h3');
         groupNameElement.textContent = group.name;
         groupHeaderElement.appendChild(groupNameElement);
 
+        // Create the group colour element
         const groupColourElement = document.createElement('p');
-        groupColourElement.textContent = `Colour: ${group.colour}`;
+        groupColourElement.className = 'group-colour';
+
+        // Get the colour text and set it to title case
+        const groupColour = group.colour.charAt(0).toUpperCase() + group.colour.slice(1).toLowerCase();
+        groupColourElement.textContent = `Colour: ${groupColour}`;
+
+        // Create a span for the colour dot
+        const groupColourSpan = document.createElement('span');
+        groupColourSpan.className = group.colour;
+        groupColourSpan.textContent = ' ●';
+        groupColourElement.appendChild(groupColourSpan);
+
+        // Append the colour element to the header
         groupHeaderElement.appendChild(groupColourElement);
 
+        // Append the header to the group element
         groupElement.appendChild(groupHeaderElement);
 
+        // Create a list of URLs for the group
         const groupUrlsElement = document.createElement('ul');
         group.urls.forEach(url => {
             const urlElement = document.createElement('li');
@@ -90,10 +118,16 @@ async function getStoredGroups() {
         });
         groupElement.appendChild(groupUrlsElement);
 
+        // Create buttons for the group
         const groupButtonElement = document.createElement('div');
         groupButtonElement.className = 'existing-group-buttons';
+
+        // Create the delete button
         const deleteButton = document.createElement('button');
+        deleteButton.className = 'options-button';
         deleteButton.textContent = 'Delete Group';
+
+        // Add an event listener to the delete button
         deleteButton.addEventListener('click', async () => {
             // Remove the group from storage
             let storedGroups = await chrome.storage.local.get('tab_groups');
@@ -104,20 +138,30 @@ async function getStoredGroups() {
             // Refresh the options UI
             await getStoredGroups();
         });
+
+        // Append the delete button to the group buttons
         groupButtonElement.appendChild(deleteButton);
 
+        // Create the edit button
         const editButton = document.createElement('button');
+        editButton.className = 'options-button';
         editButton.textContent = 'Edit Group';
+
+        // Add an event listener to the edit button
         editButton.addEventListener('click', () => {
             // Populate the input fields with the group's data for editing
             document.getElementById('group-name').value = group.name;
             document.getElementById('group-colour').value = group.colour;
             document.getElementById('group-urls').value = group.urls.join(', ');
         });
+
+        // Append the edit button to the group buttons
         groupButtonElement.appendChild(editButton);
 
+        // Append the buttons to the group element
         groupElement.appendChild(groupButtonElement);
 
+        // Append the group element to the options container
         optionsContainer.appendChild(groupElement);
     });
 }

@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content:flex-start;
+    justify-content: flex-start;
 }
 
 .new-group {
@@ -13,9 +13,24 @@
     width: 100%;
     border: 0.075rem solid silver;
     border-radius: 0.5rem;
+    background-color: hsl(219, 79%, 98%);
 }
 
-.new-group > * {
+.new-group:hover {
+    background-color: hsl(219, 79%, 96%);
+}
+
+.new-group-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin: 0.25rem;
+    width: -webkit-fill-available;
+}
+
+
+.new-group-container>* {
     margin: 0.25rem;
 }
 
@@ -40,9 +55,14 @@
     border: 0.075rem solid silver;
     border-radius: 0.5rem;
     margin-top: 0.5rem;
+    background-color: hsl(219, 79%, 98%);
 }
 
-.existing-group > * {
+.existing-group:hover {
+    background-color: hsl(219, 79%, 96%);
+}
+
+.existing-group>* {
     margin: 0.25rem;
 }
 
@@ -54,7 +74,7 @@
     width: 100%;
 }
 
-.existing-group-header > * {
+.existing-group-header>* {
     margin: 0.25rem;
     width: 100%;
 }
@@ -74,11 +94,73 @@
     width: 100%;
 }
 
-.existing-group-buttons > * {
+.existing-group-buttons>* {
     margin: 0.25rem;
 }
 
 .error-message {
     color: red;
     font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
+.options-button,
+.group-colour-select {
+    border: 0.075rem solid silver;
+    border-radius: 0.25rem;
+    background-color: hsl(219, 79%, 94%);
+}
+
+.options-button:hover,
+.group-colour-select:hover {
+    background-color: hsl(219, 79%, 92%);
+}
+
+.group-colour {
+    text-align: right;
+    padding-right: 0.5rem;
+}
+
+select,
+::picker(select) {
+    appearance: base-select;
+}
+
+.blue {
+    color: rgb(56, 113, 224);
+}
+
+.red {
+    color: rgb(200, 64, 49);
+}
+
+.yellow {
+    color: rgb(238, 174, 60);
+}
+
+.green {
+    color: rgb(60, 126, 64);
+}
+
+.pink {
+    color: rgb(191, 48, 130);
+}
+
+.purple {
+    color: rgb(149, 71, 233);
+}
+
+.cyan {
+    color: rgb(52, 119, 127);
+}
+
+.orange {
+    color: rgb(231, 146, 78);
+}
+
+.grey {
+    color: rgb(96, 99, 103);
 }

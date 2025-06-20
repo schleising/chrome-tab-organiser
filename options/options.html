@@ -13,25 +13,30 @@
     <h1>Options</h1>
   </div>
   <div class="new-group">
-    <h2>Create New Group</h2>
-    <label for="group-name">Group Name:</label>
-    <input type="text" id="group-name" name="group-name" class="group-input" required>
-    <label for="group-urls">Group Hostnames (comma separated):</label>
-    <input type="text" id="group-urls" name="group-urls" class="group-input" required>
-    <label for="group-colour">Group Colour:</label>
-    <select id="group-colour" name="group-colour" required>
-      <option value="blue">Blue</option>
-      <option value="red">Red</option>
-      <option value="green">Green</option>
-      <option value="yellow">Yellow</option>
-      <option value="purple">Purple</option>
-      <option value="orange">Orange</option>
-      <option value="pink">Pink</option>
-      <option value="grey">Grey</option>
-      <option value="cyan">Cyan</option>
-    </select>
-    <button type="submit" id="create-group">Create Group</button>
-    <p id="group-error" class="error-message"></p>
+    <div class="new-group-container">
+      <h2>Create New Group</h2>
+      <label for="group-name">Group Name:</label>
+      <input type="text" id="group-name" name="group-name" class="group-input" required>
+      <label for="group-urls">Group Hostnames (comma separated):</label>
+      <input type="text" id="group-urls" name="group-urls" class="group-input" required>
+      <label for="group-colour">Group Colour:</label>
+      <select id="group-colour" name="group-colour" class="group-colour-select" required>
+        <button class="options-button">
+          <selectedcontent></selectedcontent>
+        </button>
+        <option value="blue"><span class="blue">●</span> Blue</option>
+        <option value="red"><span class="red">●</span> Red</option>
+        <option value="green"><span class="green">●</span> Green</option>
+        <option value="yellow"><span class="yellow">●</span> Yellow</option>
+        <option value="purple"><span class="purple">●</span> Purple</option>
+        <option value="orange"><span class="orange">●</span> Orange</option>
+        <option value="pink"><span class="pink">●</span> Pink</option>
+        <option value="grey"><span class="grey">●</span> Grey</option>
+        <option value="cyan"><span class="cyan">●</span> Cyan</option>
+      </select>
+      <button type="submit" id="create-group" class="options-button">Create Group</button>
+      <p id="group-error" class="error-message hidden"></p>
+    </div>
   </div>
   <div class="existing-group-container" id="existing-group-container"></div>
   <script src="options.js"></script>

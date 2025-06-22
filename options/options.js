@@ -122,6 +122,9 @@ async function getStoredGroups() {
         const groupButtonElement = document.createElement('div');
         groupButtonElement.className = 'existing-group-buttons';
 
+        const editDeleteButtonElement = document.createElement('div');
+        editDeleteButtonElement.className = 'edit-delete-buttons';
+
         // Create the delete button
         const deleteButton = document.createElement('button');
         deleteButton.className = 'options-button';
@@ -140,7 +143,7 @@ async function getStoredGroups() {
         });
 
         // Append the delete button to the group buttons
-        groupButtonElement.appendChild(deleteButton);
+        editDeleteButtonElement.appendChild(deleteButton);
 
         // Create the edit button
         const editButton = document.createElement('button');
@@ -156,7 +159,79 @@ async function getStoredGroups() {
         });
 
         // Append the edit button to the group buttons
-        groupButtonElement.appendChild(editButton);
+        editDeleteButtonElement.appendChild(editButton);
+
+        // Append the edit/delete buttons to the group button element
+        groupButtonElement.appendChild(editDeleteButtonElement);
+
+        // Create the up/down button element
+        const upDownButtonElement = document.createElement('div');
+        upDownButtonElement.className = 'up-down-buttons';
+
+        // Create the up button
+        const upButton = document.createElement('button');
+        upButton.className = 'options-button';
+        upButton.textContent = '▲';
+
+        // Disable the up button if this is the first group
+        if (storedGroups.indexOf(group) === 0) {
+            upButton.disabled = true;
+        }
+
+        // Add an event listener to the up button
+        upButton.addEventListener('click', async () => {
+            // Get the stored groups from local storage
+            let storedGroups = await chrome.storage.sync.get('tab_groups');
+            storedGroups = storedGroups.tab_groups || [];
+
+            // Find the index of the current group
+            const groupIndex = storedGroups.findIndex(g => g.name === group.name);
+            if (groupIndex > 0) {
+                // Swap with the previous group
+                [storedGroups[groupIndex - 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex - 1]];
+                await chrome.storage.sync.set({ tab_groups: storedGroups });
+
+                // Refresh the options UI
+                await getStoredGroups();
+            }
+        });
+
+        // Append the up button to the up/down button element
+        upDownButtonElement.appendChild(upButton);
+
+        // Create the down button
+        const downButton = document.createElement('button');
+        downButton.className = 'options-button';
+        downButton.textContent = '▼';
+
+        // Disable the down button if this is the last group
+        if (storedGroups.indexOf(group) === storedGroups.length - 1) {
+            downButton.disabled = true;
+        }
+
+        // Add an event listener to the down button
+        downButton.addEventListener('click', async () => {
+            // Get the stored groups from local storage
+            let storedGroups = await chrome.storage.sync.get('tab_groups');
+            storedGroups = storedGroups.tab_groups || [];
+
+            // Find the index of the current group
+            const groupIndex = storedGroups.findIndex(g => g.name === group.name);
+            if (groupIndex < storedGroups.length - 1) {
+                // Swap with the next group
+                [storedGroups[groupIndex + 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex + 1]];
+                await chrome.storage.sync.set({ tab_groups: storedGroups });
+
+                // Refresh the options UI
+                await getStoredGroups();
+            }
+        });
+
+        // Append the down button to the up/down button element
+        upDownButtonElement.appendChild(downButton);
+
+        // Append the up/down buttons to the group button element
+        groupButtonElement.appendChild(upDownButtonElement);
 
         // Append the buttons to the group element
         groupElement.appendChild(groupButtonElement);

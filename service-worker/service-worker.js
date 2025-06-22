@@ -71,6 +71,9 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             expectedGroupId = expectedGroup[0].id;
         }
 
+        // Get the initial group ID of the updated tab
+        const initialGroupId = updatedTab.groupId;
+
         // Group the tab if it is not already in the correct group
         const newGroupId = await chrome.tabs.group({
             tabIds: [updatedTabId],
@@ -86,6 +89,18 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
         } else {
             console.error(`Failed to group tab ${updatedTabId} under ${storedGroup.name}`);
             return;
+        }
+
+        // If the initial group ID is not the same as the expected group ID, move the tab to the end of the new group
+        if (initialGroupId !== expectedGroupId) {
+            const tabsInGroup = await chrome.tabs.query({
+                currentWindow: true,
+                groupId: newGroupId
+            });
+            if (tabsInGroup.length > 0) {
+                const lastTabIndex = Math.max(...tabsInGroup.map(tab => tab.index));
+                await chrome.tabs.move(updatedTabId, { index: lastTabIndex });
+            }
         }
 
         // If the group is newly created, move it to the end of the tab list
@@ -104,16 +119,6 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
 
         // Rearrange the tab groups to make them contiguous
         await arrangeTabGroups();
-
-        // Move the grouped tab to the end of the group
-        const tabsInGroup = await chrome.tabs.query({
-            currentWindow: true,
-            groupId: newGroupId
-        });
-        if (tabsInGroup.length > 0) {
-            const lastTabIndex = Math.max(...tabsInGroup.map(tab => tab.index));
-            await chrome.tabs.move(updatedTabId, { index: lastTabIndex });
-        }
     }
 });
 

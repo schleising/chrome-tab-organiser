@@ -205,7 +205,7 @@ async function getStoredGroups() {
 
             dialog.returnValue = ''; // Reset previous value
 
-            dialog.addEventListener('close', async function handler() {
+            dialog.addEventListener('close', async function dialogHandler() {
                 if (dialog.returnValue === 'ok') {
                     // Remove the group from storage
                     let storedGroups = await chrome.storage.sync.get('tab_groups');
@@ -219,7 +219,7 @@ async function getStoredGroups() {
                     // Organise all tabs in the current window
                     await deleteGroup(group.name);
                 }
-                dialog.removeEventListener('close', handler); // Clean up
+                dialog.removeEventListener('close', dialogHandler); // Clean up
             });
         });
 
@@ -247,7 +247,7 @@ async function getStoredGroups() {
             cancelButton.hidden = false;
 
             // Add an event listener to the Cancel button to reset the form
-            cancelButton.addEventListener('click', () => {
+            cancelButton.addEventListener('click', function cancelEditHandler() {
                 // Clear the input fields
                 document.getElementById('group-name').value = '';
                 document.getElementById('group-colour').value = 'blue';
@@ -260,7 +260,7 @@ async function getStoredGroups() {
                 cancelButton.hidden = true;
 
                 // Remove this event listener
-                cancelButton.removeEventListener('click', arguments.callee);
+                cancelButton.removeEventListener('click', cancelEditHandler);
             });
 
             // Scroll to the top of the page to show the input fields

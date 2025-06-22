@@ -205,6 +205,9 @@ async function getStoredGroups() {
 
             // Refresh the options UI
             await getStoredGroups();
+
+            // Organise all tabs in the current window
+            await organiseAllTabs();
         });
 
         // Append the delete button to the group buttons
@@ -286,6 +289,9 @@ async function getStoredGroups() {
 
                 // Refresh the options UI
                 await getStoredGroups();
+
+                // Reorganise all tabs in the current window
+                await organiseAllTabs();
             }
         });
 
@@ -317,6 +323,9 @@ async function getStoredGroups() {
 
                 // Refresh the options UI
                 await getStoredGroups();
+
+                // Reorganise all tabs in the current window
+                await organiseAllTabs();
             }
         });
 

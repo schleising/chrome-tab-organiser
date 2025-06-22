@@ -90,11 +90,29 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    width: 100%;
+    justify-content: space-between;
+    width: -webkit-fill-available;
 }
 
-.existing-group-buttons>* {
+.edit-delete-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.edit-delete-buttons>* {
+    margin: 0.25rem;
+}
+
+.up-down-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.up-down-buttons>* {
     margin: 0.25rem;
 }
 

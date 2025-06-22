@@ -190,3 +190,26 @@ async function arrangeTabGroups() {
         }
     }
 }
+
+// Function to delete a group, the tabs in the group will be ungrouped and moved to the end of the tab list
+export async function deleteGroup(groupName) {
+    // Get all instances of the group by name in all windows
+    const groups = await chrome.tabGroups.query({ title: groupName });
+
+    for (const group of groups) {
+        // Get all tabs in all windows
+        const tabsInGroup = await chrome.tabs.query({ groupId: group.id });
+
+        // Ungroup the tabs and move them to the end of the tab list
+        for (const tab of tabsInGroup) {
+            await chrome.tabs.ungroup(tab.id);
+            await chrome.tabs.move(tab.id, { index: -1 });
+        }
+
+        // Remove the group
+        await chrome.tabGroups.remove(group.id);
+    }
+
+    // Rearrange the tab groups to make them contiguous
+    await arrangeTabGroups();
+}

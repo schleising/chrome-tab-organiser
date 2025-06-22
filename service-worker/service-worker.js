@@ -151,10 +151,15 @@ async function arrangeTabGroups() {
         groupIndices[group.id] = { start: startIndex, end: endIndex };
     }
 
-    // Sort the groups by start index, just sorting the keys of the groupIndices object
-    // This will ensure that the groups are processed in the order of their start indices
-    // In JavaScript objects do not maintain order
-    const sortedGroupIds = Object.keys(groupIndices).sort((a, b) => groupIndices[a].start - groupIndices[b].start).map(Number);
+    // Sort the group IDs based on the order of the stored groups
+    /** @type {StoredGroup[]} */
+    let storedGroups = await chrome.storage.sync.get('tab_groups');
+    storedGroups = storedGroups.tab_groups || [];
+
+    const sortedGroupIds = storedGroups
+        .map(group => group.name)
+        .map(name => tabGroups.find(g => g.title === name)?.id)
+        .filter(id => id !== undefined);
 
     // Make the groups contiguous by adjusting the start and end indices, the number of tabs in each group will be preserved
     // Initialize the current index to the number of pinned tabs

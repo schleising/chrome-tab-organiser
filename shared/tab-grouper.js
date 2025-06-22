@@ -205,9 +205,6 @@ export async function deleteGroup(groupName) {
             await chrome.tabs.ungroup(tab.id);
             await chrome.tabs.move(tab.id, { index: -1 });
         }
-
-        // Remove the group
-        await chrome.tabGroups.remove(group.id);
     }
 
     // Rearrange the tab groups to make them contiguous

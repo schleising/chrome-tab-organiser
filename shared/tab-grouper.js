@@ -38,7 +38,7 @@ export async function organiseTab(updatedTabId, updatedTab) {
 
         // If the current tab index is less than or equal to the maximum index, move it to the end
         if (updatedTab.index <= maxIndex) {
-            chrome.tabs.move(updatedTabId, {
+            await chrome.tabs.move(updatedTabId, {
                 index: -1 // Move to the end of the tab list
             });
         }

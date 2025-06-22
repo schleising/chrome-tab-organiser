@@ -347,5 +347,5 @@ async function organiseAllTabs() {
 
 // Add an event listener for the "Organise All Tabs" button
 document.getElementById('organise-all-tabs').addEventListener('click', async () => {
-    organiseAllTabs();
+    await organiseAllTabs();
 });

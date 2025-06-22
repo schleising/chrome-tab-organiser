@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     createGroupButton.addEventListener('click', async () => {
         // Clear any previous error messages
         document.getElementById('group-error').textContent = "";
-        document.getElementById('group-error').classList.add('hidden');
+        document.getElementById('group-error').hidden = true;
 
         // Get the group name and colour from the input fields
         const groupName = document.getElementById('group-name').value.trim();
@@ -21,12 +21,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!groupName || !groupColour || !groupUrls) {
             // Show error message if inputs are invalid
             document.getElementById('group-error').textContent = "Invalid input: group name, colour, and URLs are required.";
-            document.getElementById('group-error').classList.remove('hidden');
+            document.getElementById('group-error').hidden = false;
 
             // Clear the error message after 5 seconds
             setTimeout(() => {
                 document.getElementById('group-error').textContent = "";
-                document.getElementById('group-error').classList.add('hidden');
+                document.getElementById('group-error').hidden = true;
             }, 5000);
             return;
         }
@@ -43,15 +43,74 @@ document.addEventListener("DOMContentLoaded", async () => {
         let storedGroups = await chrome.storage.sync.get('tab_groups');
         storedGroups = storedGroups.tab_groups || [];
 
-        // If a group with the same name exists, update it instead of creating a new one
-        const existingGroupIndex = storedGroups.findIndex(g => g.name === newGroup.name);
-        if (existingGroupIndex !== -1) {
-            // Update the existing group
-            storedGroups[existingGroupIndex] = newGroup;
+        // Check whether we are updating an existing group or creating a new one
+        if (createGroupButton.textContent.startsWith('Update')) {
+            // If the button text starts with "Update", we are editing an existing group
+            const existingGroupName = createGroupButton.textContent.replace('Update ', '').trim();
+
+            if (existingGroupName !== newGroup.name) {
+                // Check if the new group name already exists
+                const existingGroupIndex = storedGroups.findIndex(g => g.name === newGroup.name);
+                if (existingGroupIndex !== -1) {
+                    // If a group with the new name already exists, show an error message
+                    document.getElementById('group-error').textContent = "A group with this name already exists, edit that one instead.";
+                    document.getElementById('group-error').hidden = false;
+
+                    // Clear the error message after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('group-error').textContent = "";
+                        document.getElementById('group-error').hidden = true;
+                    }, 5000);
+                    return;
+                } else {
+                    // If the group name has changed, replace the old group with the new one
+                    // If the group name has not changed, just update the existing group
+                    const existingGroupIndex = storedGroups.findIndex(g => g.name === existingGroupName);
+                    if (existingGroupIndex !== -1) {
+                        storedGroups[existingGroupIndex] = newGroup;
+                    } else {
+                        // If the group does not exist, treat it as a new group
+                        storedGroups.push(newGroup);
+                    }
+                }
+            } else {
+                // If the group name has not changed, just update the existing group
+                const existingGroupIndex = storedGroups.findIndex(g => g.name === existingGroupName);
+                if (existingGroupIndex !== -1) {
+                    storedGroups[existingGroupIndex] = newGroup;
+                } else {
+                    // If the group does not exist, treat it as a new group
+                    storedGroups.push(newGroup);
+                }
+            }
+
+            // Reset the button text to "Create Group"
+            createGroupButton.textContent = 'Create Group';
+            // Hide the Cancel button
+            const cancelButton = document.getElementById('cancel-edit');
+            cancelButton.hidden = true;
         } else {
-            // Add the new group to the list
-            storedGroups.push(newGroup);
+            // If the button text does not start with "Update", we are creating a new group
+            // Check if a group with the same name already exists
+            const existingGroupIndex = storedGroups.findIndex(g => g.name === newGroup.name);
+            if (existingGroupIndex !== -1) {
+                // If a group with the same name exists, show an error message
+                document.getElementById('group-error').textContent = "A group with this name already exists, edit it instead.";
+                document.getElementById('group-error').hidden = false;
+
+                // Clear the error message after 5 seconds
+                setTimeout(() => {
+                    document.getElementById('group-error').textContent = "";
+                    document.getElementById('group-error').hidden = true;
+                }, 5000);
+                return;
+            } else {
+                // If the group does not exist, add the new group to the stored groups
+                storedGroups.push(newGroup);
+            }
         }
+
+        // Add the new group to the stored groups
         await chrome.storage.sync.set({ tab_groups: storedGroups });
 
         // Refresh the options UI to show the new group
@@ -156,6 +215,34 @@ async function getStoredGroups() {
             document.getElementById('group-name').value = group.name;
             document.getElementById('group-colour').value = group.colour;
             document.getElementById('group-urls').value = group.urls.join(', ');
+
+            // Set the button text to "Update <Group Name>"
+            const createGroupButton = document.getElementById('create-group');
+            createGroupButton.textContent = `Update ${group.name}`;
+
+            // Unhide the Cancel button
+            const cancelButton = document.getElementById('cancel-edit');
+            cancelButton.hidden = false;
+
+            // Add an event listener to the Cancel button to reset the form
+            cancelButton.addEventListener('click', () => {
+                // Clear the input fields
+                document.getElementById('group-name').value = '';
+                document.getElementById('group-colour').value = 'blue';
+                document.getElementById('group-urls').value = '';
+
+                // Reset the button text to "Create Group"
+                createGroupButton.textContent = 'Create Group';
+
+                // Hide the Cancel button
+                cancelButton.hidden = true;
+
+                // Remove this event listener
+                cancelButton.removeEventListener('click', arguments.callee);
+            });
+
+            // Scroll to the top of the page to show the input fields
+            window.scrollTo(0, 0);
         });
 
         // Append the edit button to the group buttons

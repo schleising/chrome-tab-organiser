@@ -38,6 +38,18 @@
     width: -webkit-fill-available;
 }
 
+.group-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    width: -webkit-fill-available;
+}
+
+.group-buttons>* {
+    margin-right: 0.5rem;
+}
+
 .existing-group-container {
     display: flex;
     flex-direction: column;
@@ -119,10 +131,6 @@
 .error-message {
     color: red;
     font-weight: bold;
-}
-
-.hidden {
-    display: none;
 }
 
 .options-button,

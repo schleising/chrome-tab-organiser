@@ -5,7 +5,8 @@
     justify-content: space-between;
 }
 
-.new-group {
+.new-group,
+.dialog-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -190,4 +191,26 @@ select,
 
 .grey {
     color: rgb(96, 99, 103);
+}
+
+dialog {
+    border: 0.075rem solid silver;
+    border-radius: 0.5rem;
+    background-color: hsl(219, 79%, 98%);
+    padding: 0;
+}
+
+.dialog-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.dialog-container>* {
+    margin: 0.5rem;
+}
+
+.dialog-buttons>* {
+    margin-right: 0.5rem;
 }

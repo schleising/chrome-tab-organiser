@@ -197,17 +197,30 @@ async function getStoredGroups() {
 
         // Add an event listener to the delete button
         deleteButton.addEventListener('click', async () => {
-            // Remove the group from storage
-            let storedGroups = await chrome.storage.sync.get('tab_groups');
-            storedGroups = storedGroups.tab_groups || [];
-            storedGroups = storedGroups.filter(g => g.name !== group.name);
-            await chrome.storage.sync.set({ tab_groups: storedGroups });
+            // Create a confirmation dialog
+            const dialog = document.getElementById('confirm-dialog');
+            const message = document.getElementById('confirm-message');
+            message.textContent = `Are you sure you want to delete the group "${group.name}"?`;
+            dialog.showModal();
 
-            // Refresh the options UI
-            await getStoredGroups();
+            dialog.returnValue = ''; // Reset previous value
 
-            // Organise all tabs in the current window
-            await deleteGroup(group.name);
+            dialog.addEventListener('close', async function handler() {
+                if (dialog.returnValue === 'ok') {
+                    // Remove the group from storage
+                    let storedGroups = await chrome.storage.sync.get('tab_groups');
+                    storedGroups = storedGroups.tab_groups || [];
+                    storedGroups = storedGroups.filter(g => g.name !== group.name);
+                    await chrome.storage.sync.set({ tab_groups: storedGroups });
+
+                    // Refresh the options UI
+                    await getStoredGroups();
+
+                    // Organise all tabs in the current window
+                    await deleteGroup(group.name);
+                }
+                dialog.removeEventListener('close', handler); // Clean up
+            });
         });
 
         // Append the delete button to the group buttons

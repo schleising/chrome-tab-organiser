@@ -2,6 +2,8 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
+import { organiseTab } from '../shared/tab-grouper.js';
+
 document.addEventListener("DOMContentLoaded", async () => {
     await getStoredGroups();
 
@@ -112,6 +114,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Add the new group to the stored groups
         await chrome.storage.sync.set({ tab_groups: storedGroups });
+
+
+        // Organise all tabs in the current window
+        await organiseAllTabs();
 
         // Refresh the options UI to show the new group
         await getStoredGroups();
@@ -327,3 +333,19 @@ async function getStoredGroups() {
         optionsContainer.appendChild(groupElement);
     });
 }
+
+// This function will be called to organise all tabs in the current window
+async function organiseAllTabs() {
+    // Get all tabs in the current window
+    const allTabs = await chrome.tabs.query({ currentWindow: true });
+
+    // Iterate through each tab and organise it
+    for (const tab of allTabs) {
+        await organiseTab(tab.id, tab);
+    }
+}
+
+// Add an event listener for the "Organise All Tabs" button
+document.getElementById('organise-all-tabs').addEventListener('click', async () => {
+    await organiseAllTabs();
+});

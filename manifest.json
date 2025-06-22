@@ -14,7 +14,8 @@
     "open_in_tab": false
   },
   "background": {
-    "service_worker": "service-worker/service-worker.js"
+    "service_worker": "service-worker/service-worker.js",
+    "type": "module"
   },
   "permissions": [
     "storage",

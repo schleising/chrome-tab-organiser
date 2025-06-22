@@ -28,6 +28,11 @@ export async function organiseTab(updatedTabId, updatedTab) {
 
     // If no group is found and the tab is to the left of grouped tabs, set the index to -1 and return
     if (!storedGroup) {
+        // Ungroup the tab if it is currently grouped
+        if (updatedTab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+            await chrome.tabs.ungroup(updatedTabId);
+        }
+
         // Get all tabs in the current window
         const allTabs = await chrome.tabs.query({ currentWindow: true });
 

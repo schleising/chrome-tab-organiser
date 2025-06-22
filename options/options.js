@@ -75,9 +75,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         storedGroups.push(newGroup);
                     }
                 }
-
-                // Organise all tabs in the current window
-                await organiseAllTabs();
             } else {
                 // If the group name has not changed, just update the existing group
                 const existingGroupIndex = storedGroups.findIndex(g => g.name === existingGroupName);
@@ -117,6 +114,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Add the new group to the stored groups
         await chrome.storage.sync.set({ tab_groups: storedGroups });
+
+
+        // Organise all tabs in the current window
+        await organiseAllTabs();
 
         // Refresh the options UI to show the new group
         await getStoredGroups();

@@ -16,7 +16,7 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
     if (changeInfo.status === 'complete') {
         // Get the stored groups from local storage
         /** @type {StoredGroup[]} */
-        let storedGroups = await chrome.storage.local.get('tab_groups');
+        let storedGroups = await chrome.storage.sync.get('tab_groups');
         storedGroups = storedGroups.tab_groups || [];
 
         // Return if no groups are stored

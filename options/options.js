@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         // Store the new group in local storage
-        let storedGroups = await chrome.storage.local.get('tab_groups');
+        let storedGroups = await chrome.storage.sync.get('tab_groups');
         storedGroups = storedGroups.tab_groups || [];
 
         // If a group with the same name exists, update it instead of creating a new one
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Add the new group to the list
             storedGroups.push(newGroup);
         }
-        await chrome.storage.local.set({ tab_groups: storedGroups });
+        await chrome.storage.sync.set({ tab_groups: storedGroups });
 
         // Refresh the options UI to show the new group
         await getStoredGroups();
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function getStoredGroups() {
     // Load options from storage
     /** @type {StoredGroup[]} */
-    let storedGroups = await chrome.storage.local.get('tab_groups');
+    let storedGroups = await chrome.storage.sync.get('tab_groups');
     storedGroups = storedGroups.tab_groups || [];
 
     // Populate the options UI with the stored groups
@@ -130,10 +130,10 @@ async function getStoredGroups() {
         // Add an event listener to the delete button
         deleteButton.addEventListener('click', async () => {
             // Remove the group from storage
-            let storedGroups = await chrome.storage.local.get('tab_groups');
+            let storedGroups = await chrome.storage.sync.get('tab_groups');
             storedGroups = storedGroups.tab_groups || [];
             storedGroups = storedGroups.filter(g => g.name !== group.name);
-            await chrome.storage.local.set({ tab_groups: storedGroups });
+            await chrome.storage.sync.set({ tab_groups: storedGroups });
 
             // Refresh the options UI
             await getStoredGroups();

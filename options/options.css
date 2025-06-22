@@ -1,8 +1,8 @@
-.container {
+.header {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .new-group {
@@ -138,6 +138,7 @@
     border: 0.075rem solid silver;
     border-radius: 0.25rem;
     background-color: hsl(219, 79%, 94%);
+    padding: 0.25rem 0.5rem;
 }
 
 .options-button:hover,

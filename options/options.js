@@ -218,6 +218,9 @@ async function getStoredGroups() {
 
                     // Organise all tabs in the current window
                     await deleteGroup(group.name);
+
+                    // Organise all tabs in the current window
+                    await organiseAllTabs();
                 }
                 dialog.removeEventListener('close', dialogHandler); // Clean up
             });

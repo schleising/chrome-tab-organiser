@@ -23,8 +23,8 @@ export async function organiseTab(updatedTabId, updatedTab) {
         return;
     }
 
-    // Check which group the updated tab belongs to
-    const storedGroup = storedGroups.find(g => g.urls.some(url => updatedTab.url && updatedTab.url.toLowerCase().includes(url.toLowerCase())));
+    // Check which group the updated tab belongs to by finding the best match by percentage of URL match
+    const storedGroup = calculateBestGroupMatch(storedGroups, updatedTab.url);
 
     // If no group is found and the tab is to the left of grouped tabs, set the index to -1 and return
     if (!storedGroup) {
@@ -211,7 +211,30 @@ export async function deleteGroup(groupName) {
             await chrome.tabs.move(tab.id, { index: -1 });
         }
     }
+}
 
-    // Rearrange the tab groups to make them contiguous
-    await arrangeTabGroups();
+// Function to calculate the best group match based on number of characters in each URL matching
+function calculateBestGroupMatch(storedGroups, url) {
+    let bestMatch = null;
+    let bestMatchCount = 0;
+
+    // Iterate through each stored group
+    for (const group of storedGroups) {
+        for (const groupUrl of group.urls) {
+            // Check if the URL includes the group URL
+            if (url.includes(groupUrl)) {
+                // Get the length of the group URL
+                const matchCount = groupUrl.length;
+
+                // If this is the best match so far, update the best match
+                if (matchCount > bestMatchCount) {
+                    bestMatchCount = matchCount;
+                    bestMatch = group;
+                }
+            }
+        }
+    }
+
+    // Return the best match group or null if no match is found
+    return bestMatch;
 }

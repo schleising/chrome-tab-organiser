@@ -16,9 +16,6 @@ export async function organiseTab(updatedTabId, updatedTab) {
 
     // Return if the updated tab is pinned
     if (updatedTab.pinned) {
-        // Rearrange the tab groups to make them contiguous
-        await arrangeTabGroups();
-
         // If the tab is pinned, we do not want to group it, so return
         return;
     }
@@ -47,9 +44,6 @@ export async function organiseTab(updatedTabId, updatedTab) {
                 index: -1 // Move to the end of the tab list
             });
         }
-
-        // Rearrange the tab groups to make them contiguous
-        await arrangeTabGroups();
 
         // Nothing to group, so return
         return;
@@ -111,13 +105,10 @@ export async function organiseTab(updatedTabId, updatedTab) {
         // Move the new group to the end of the tab list
         await chrome.tabGroups.move(newGroupId, { index: maxIndex + 1 });
     }
-
-    // Rearrange the tab groups to make them contiguous
-    await arrangeTabGroups();
 }
 
 // Function to calculate the start and end indices for each tab group and move them to make them contiguous
-async function arrangeTabGroups() {
+export async function arrangeTabGroups() {
     // Get all tab groups
     const tabGroups = await chrome.tabGroups.query({ windowId: chrome.windows.WINDOW_ID_CURRENT });
 
@@ -211,6 +202,9 @@ export async function deleteGroup(groupName) {
             await chrome.tabs.move(tab.id, { index: -1 });
         }
     }
+
+    // Arrange the tab groups to make them contiguous after deletion
+    await arrangeTabGroups();
 }
 
 // Function to calculate the best group match based on number of characters in each URL matching

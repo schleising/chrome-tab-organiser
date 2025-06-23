@@ -2,7 +2,7 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
-import { organiseTab, deleteGroup } from '../shared/tab-grouper.js';
+import { organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
     await getStoredGroups();
@@ -368,6 +368,9 @@ async function organiseAllTabs() {
     for (const tab of allTabs) {
         await organiseTab(tab.id, tab);
     }
+
+    // After organising all tabs, arrange the tab groups
+    await arrangeTabGroups();
 }
 
 // Add an event listener for the "Organise All Tabs" button

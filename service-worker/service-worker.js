@@ -16,6 +16,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) => {
     // Check if the updated tab is the one we are interested in
     if (changeInfo.status === 'complete') {
+        // Skip any chrome: tabs
+        if (new URL(updatedTab.url).protocol === 'chrome:') {
+            return;
+        }
+
         // Call the organiseTab function to handle the tab grouping logic
         await organiseTab(updatedTabId, updatedTab);
 

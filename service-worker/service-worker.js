@@ -10,6 +10,9 @@ chrome.runtime.onInstalled.addListener(async () => {
 
     // Log the installation event
     console.log("Extension installed.");
+
+    // Open the options page when the extension is installed
+    await chrome.runtime.openOptionsPage();
 });
 
 // Add a listener for tab updates

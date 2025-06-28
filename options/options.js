@@ -366,6 +366,19 @@ async function organiseAllTabs() {
 
     // Iterate through each tab and organise it
     for (const tab of allTabs) {
+        // Skip any chrome: tabs
+        if (new URL(tab.url).protocol === 'chrome:') {
+            console.log(`Skipping chrome tab: ${tab.url}`);
+            continue;
+        }
+
+        // Skip if the window type is not normal
+        const window = await chrome.windows.get(tab.windowId);
+        if (window.type !== 'normal') {
+            continue;
+        }
+
+        // Call the organiseTab function to handle the tab grouping logic
         await organiseTab(tab.id, tab);
     }
 

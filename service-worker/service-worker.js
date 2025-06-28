@@ -23,6 +23,13 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             return;
         }
 
+        // Get the window type to ensure we are only processing tabs in a normal window
+        const window = await chrome.windows.get(updatedTab.windowId);
+        if (window.type !== 'normal') {
+            // If the window is not normal, we do not want to group the tab, so return
+            return;
+        }
+
         // Call the organiseTab function to handle the tab grouping logic
         await organiseTab(updatedTabId, updatedTab);
 

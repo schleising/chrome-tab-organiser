@@ -4,15 +4,14 @@
 
 import { organiseTab, arrangeTabGroups } from '../shared/tab-grouper.js';
 
-chrome.runtime.onInstalled.addListener(async () => {
-    // Remove any existing listeners to avoid duplicates
-    chrome.tabs.onUpdated.removeListener();
-
+chrome.runtime.onInstalled.addListener(async (details) => {
     // Log the installation event
     console.log("Extension installed.");
 
-    // Open the options page when the extension is installed
-    await chrome.runtime.openOptionsPage();
+    if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+        // Open the options page when the extension is installed
+        await chrome.runtime.openOptionsPage();
+    }
 });
 
 // Add a listener for tab updates

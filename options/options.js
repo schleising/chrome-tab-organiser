@@ -2,10 +2,10 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
-import { organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
+import { getStoredGroups, organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await getStoredGroups();
+    await initialiseOptionsDialog();
 
     // Add event listener for the "Create Group" button
     const createGroupButton = document.getElementById('create-group');
@@ -42,8 +42,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         // Store the new group in local storage
-        let storedGroups = await chrome.storage.sync.get('tab_groups');
-        storedGroups = storedGroups.tab_groups || [];
+        /** @type {StoredGroup[]} */
+        let storedGroups = await getStoredGroups();
 
         // Check whether we are updating an existing group or creating a new one
         if (createGroupButton.textContent.startsWith('Update')) {
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await organiseAllTabs();
 
         // Refresh the options UI to show the new group
-        await getStoredGroups();
+        await initialiseOptionsDialog();
 
         // Clear input fields
         document.getElementById('group-name').value = '';
@@ -129,11 +129,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
-async function getStoredGroups() {
+async function initialiseOptionsDialog() {
     // Load options from storage
     /** @type {StoredGroup[]} */
-    let storedGroups = await chrome.storage.sync.get('tab_groups');
-    storedGroups = storedGroups.tab_groups || [];
+    let storedGroups = await getStoredGroups();
 
     // Populate the options UI with the stored groups
     const optionsContainer = document.getElementById('existing-group-container');
@@ -208,13 +207,13 @@ async function getStoredGroups() {
             dialog.addEventListener('close', async function dialogHandler() {
                 if (dialog.returnValue === 'ok') {
                     // Remove the group from storage
-                    let storedGroups = await chrome.storage.sync.get('tab_groups');
-                    storedGroups = storedGroups.tab_groups || [];
+                    /** @type {StoredGroup[]} */
+                    let storedGroups = await getStoredGroups();
                     storedGroups = storedGroups.filter(g => g.name !== group.name);
                     await chrome.storage.sync.set({ tab_groups: storedGroups });
 
                     // Refresh the options UI
-                    await getStoredGroups();
+                    await initialiseOptionsDialog();
 
                     // Organise all tabs in the current window
                     await deleteGroup(group.name);
@@ -293,8 +292,8 @@ async function getStoredGroups() {
         // Add an event listener to the up button
         upButton.addEventListener('click', async () => {
             // Get the stored groups from local storage
-            let storedGroups = await chrome.storage.sync.get('tab_groups');
-            storedGroups = storedGroups.tab_groups || [];
+            /** @type {StoredGroup[]} */
+            let storedGroups = await getStoredGroups();
 
             // Find the index of the current group
             const groupIndex = storedGroups.findIndex(g => g.name === group.name);
@@ -304,7 +303,7 @@ async function getStoredGroups() {
                 await chrome.storage.sync.set({ tab_groups: storedGroups });
 
                 // Refresh the options UI
-                await getStoredGroups();
+                await initialiseOptionsDialog();
 
                 // Reorganise all tabs in the current window
                 await organiseAllTabs();
@@ -327,8 +326,8 @@ async function getStoredGroups() {
         // Add an event listener to the down button
         downButton.addEventListener('click', async () => {
             // Get the stored groups from local storage
-            let storedGroups = await chrome.storage.sync.get('tab_groups');
-            storedGroups = storedGroups.tab_groups || [];
+            /** @type {StoredGroup[]} */
+            let storedGroups = await getStoredGroups();
 
             // Find the index of the current group
             const groupIndex = storedGroups.findIndex(g => g.name === group.name);
@@ -338,7 +337,7 @@ async function getStoredGroups() {
                 await chrome.storage.sync.set({ tab_groups: storedGroups });
 
                 // Refresh the options UI
-                await getStoredGroups();
+                await initialiseOptionsDialog();
 
                 // Reorganise all tabs in the current window
                 await organiseAllTabs();

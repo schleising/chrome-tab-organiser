@@ -2,12 +2,33 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
+// Function to get the stored groups from local storage or initialise with an empty array
+/**
+ * 
+ * @returns {Promise<StoredGroup[]>} - A promise that resolves to an array of stored groups
+ */
+export async function getStoredGroups() {
+    // Load options from storage
+    let result = await chrome.storage.sync.get('tab_groups');
+    /** @type {StoredGroup[]} */
+    let tab_groups = Array.isArray(result.tab_groups) ? result.tab_groups : [];
+
+    // If no groups are stored, initialise with an empty array
+    if (!tab_groups) {
+        tab_groups = [];
+    }
+
+    // Return a promise that resolves to the stored groups
+    return new Promise((resolve) => {
+        resolve(tab_groups);
+    });
+}
+
 // Add a listener for tab updates
 export async function organiseTab(updatedTabId, updatedTab) {
     // Get the stored groups from local storage
     /** @type {StoredGroup[]} */
-    let storedGroups = await chrome.storage.sync.get('tab_groups');
-    storedGroups = storedGroups.tab_groups || [];
+    let storedGroups = await getStoredGroups();
 
     // Return if no groups are stored
     if (storedGroups.length === 0) {
@@ -138,8 +159,7 @@ export async function arrangeTabGroups() {
 
     // Sort the group IDs based on the order of the stored groups
     /** @type {StoredGroup[]} */
-    let storedGroups = await chrome.storage.sync.get('tab_groups');
-    storedGroups = storedGroups.tab_groups || [];
+    let storedGroups = await getStoredGroups();
 
     const sortedGroupIds = storedGroups
         .map(group => group.name)

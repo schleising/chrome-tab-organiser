@@ -18,6 +18,14 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) => {
     // Check if the updated tab is the one we are interested in
     if (changeInfo.status === 'complete') {
+        // If the tab is closing, we do not want to organise it
+        try {
+            await chrome.tabs.get(updatedTabId);
+        } catch (error) {
+            // If the tab is not found, it means it is closing or has been closed
+            return;
+        }
+
         // Skip any chrome: tabs
         if (new URL(updatedTab.url).protocol === 'chrome:') {
             return;

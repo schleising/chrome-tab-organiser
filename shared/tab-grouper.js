@@ -9,7 +9,16 @@
  */
 export async function getStoredGroups() {
     // Load options from storage
-    let result = await chrome.storage.sync.get('tab_groups');
+    let result;
+    try {
+        // Attempt to get the stored groups from chrome storage
+        result = await chrome.storage.sync.get('tab_groups');
+    } catch (error) {
+        // If there is an error accessing storage, log it and return an empty array
+        console.error("Error accessing storage:", error);
+        return [];
+    }
+
     /** @type {StoredGroup[]} */
     let tab_groups = Array.isArray(result.tab_groups) ? result.tab_groups : [];
 
@@ -46,11 +55,21 @@ export async function organiseTab(updatedTabId, updatedTab) {
     if (!storedGroup) {
         // Ungroup the tab if it is currently grouped
         if (updatedTab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
-            await chrome.tabs.ungroup(updatedTabId);
+            try {
+                await chrome.tabs.ungroup(updatedTabId);
+            } catch (error) {
+                console.error(`Error ungrouping tab ${updatedTab.url}:`, error);
+            }
         }
 
         // Get all tabs in the current window
-        const allTabs = await chrome.tabs.query({ currentWindow: true });
+        let allTabs;
+        try {
+            allTabs = await chrome.tabs.query({ currentWindow: true });
+        } catch (error) {
+            console.error(`Error querying tabs in current window ${updatedTab.url}:`, error);
+            return;
+        }
 
         // Get the maximum index of tabs which are in a group
         const maxIndex = allTabs.reduce((max, tab) => {
@@ -59,9 +78,13 @@ export async function organiseTab(updatedTabId, updatedTab) {
 
         // If the current tab index is less than or equal to the maximum index, move it to the end
         if (updatedTab.index <= maxIndex) {
-            await chrome.tabs.move(updatedTabId, {
-                index: -1 // Move to the end of the tab list
-            });
+            try {
+                await chrome.tabs.move(updatedTabId, {
+                    index: -1 // Move to the end of the tab list
+                });
+            } catch (error) {
+                console.error(`Error moving tab ${updatedTab.url} to the end:`, error);
+            }
         }
 
         // Nothing to group, so return
@@ -69,10 +92,16 @@ export async function organiseTab(updatedTabId, updatedTab) {
     }
 
     // Get the group ID of the stored group
-    const expectedGroup = await chrome.tabGroups.query({
-        title: storedGroup.name,
-        windowId: chrome.windows.WINDOW_ID_CURRENT
-    });
+    let expectedGroup;
+    try {
+        expectedGroup = await chrome.tabGroups.query({
+            title: storedGroup.name,
+            windowId: chrome.windows.WINDOW_ID_CURRENT
+        });
+    } catch (error) {
+        console.error(`Error querying group ${storedGroup.name}, ${updatedTab.url}:`, error);
+        return;
+    }
 
     let expectedGroupId = null;
     if (expectedGroup.length > 0) {
@@ -83,17 +112,29 @@ export async function organiseTab(updatedTabId, updatedTab) {
     const initialGroupId = updatedTab.groupId;
 
     // Group the tab if it is not already in the correct group
-    const newGroupId = await chrome.tabs.group({
-        tabIds: [updatedTabId],
-        groupId: expectedGroupId
-    });
+    let newGroupId;
+    try {
+        newGroupId = await chrome.tabs.group({
+            tabIds: [updatedTabId],
+            groupId: expectedGroupId
+        });
+    } catch (error) {
+        console.info(`Error grouping tab ${updatedTab.url} under group ${storedGroup.name}:`, error);
+        console.info("This is a race condition in the tab grouping API, the tab is probably closing or has been closed.");
+        return;
+    }
 
     // Set the title and colour of the group
     if (newGroupId) {
-        await chrome.tabGroups.update(newGroupId, {
-            title: storedGroup.name,
-            color: storedGroup.colour
-        });
+        try {
+            await chrome.tabGroups.update(newGroupId, {
+                title: storedGroup.name,
+                color: storedGroup.colour
+            });
+        } catch (error) {
+            console.error(`Error updating group ${storedGroup.name} with colour ${storedGroup.colour} for url ${updatedTab.url}:`, error);
+            return;
+        }
     } else {
         console.error(`Failed to group tab ${updatedTabId} under ${storedGroup.name}`);
         return;
@@ -101,35 +142,60 @@ export async function organiseTab(updatedTabId, updatedTab) {
 
     // If the initial group ID is not the same as the expected group ID, move the tab to the end of the new group
     if (initialGroupId !== expectedGroupId) {
-        const tabsInGroup = await chrome.tabs.query({
-            currentWindow: true,
-            groupId: newGroupId
-        });
-        if (tabsInGroup.length > 0) {
-            const lastTabIndex = Math.max(...tabsInGroup.map(tab => tab.index));
-            await chrome.tabs.move(updatedTabId, { index: lastTabIndex });
+        try {
+            const tabsInGroup = await chrome.tabs.query({
+                currentWindow: true,
+                groupId: newGroupId
+            });
+            if (tabsInGroup.length > 0) {
+                const lastTabIndex = Math.max(...tabsInGroup.map(tab => tab.index));
+                try {
+                    await chrome.tabs.move(updatedTabId, { index: lastTabIndex });
+                } catch (error) {
+                    console.error(`Error moving tab ${updatedTab.url} to the end of group ${storedGroup.name}:`, error);
+                }
+            }
+        } catch (error) {
+            console.error(`Error querying tab ${updatedTab.url}:`, error);
+            return;
         }
     }
 
     // If the group is newly created, move it to the end of the tab list
     if (expectedGroupId === null) {
         // Get all tabs in the current window
-        const allTabs = await chrome.tabs.query({ currentWindow: true });
+        try {
+            const allTabs = await chrome.tabs.query({ currentWindow: true });
 
-        // Find the maximum index of tabs which are in a group
-        const maxIndex = allTabs.reduce((max, tab) => {
-            return tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? Math.max(max, tab.index) : max;
-        }, -1);
+            // Find the maximum index of tabs which are in a group
+            const maxIndex = allTabs.reduce((max, tab) => {
+                return tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? Math.max(max, tab.index) : max;
+            }, -1);
 
-        // Move the new group to the end of the tab list
-        await chrome.tabGroups.move(newGroupId, { index: maxIndex + 1 });
+            try {
+                // Move the new group to the end of the tab list
+                await chrome.tabGroups.move(newGroupId, { index: maxIndex + 1 });
+            } catch (error) {
+                console.error(`Error moving new group ${storedGroup.name} to the end of the tab list:`, error);
+                return;
+            }
+        } catch (error) {
+            console.error(`Error querying tabs in current window for grouping ${updatedTab.url}:`, error);
+            return;
+        }
     }
 }
 
 // Function to calculate the start and end indices for each tab group and move them to make them contiguous
 export async function arrangeTabGroups() {
     // Get all tab groups
-    const tabGroups = await chrome.tabGroups.query({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+    let tabGroups;
+    try {
+        tabGroups = await chrome.tabGroups.query({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+    } catch (error) {
+        console.error("Error querying tab groups:", error);
+        return;
+    }
 
     // Create an object to hold the start and end indices for each group
     const groupIndices = {};
@@ -137,22 +203,27 @@ export async function arrangeTabGroups() {
     // Iterate through each tab group
     for (const group of tabGroups) {
         // Get all tabs in the current group
-        const tabsInGroup = await chrome.tabs.query({
-            currentWindow: true,
-            groupId: group.id
-        });
+        try {
+            const tabsInGroup = await chrome.tabs.query({
+                currentWindow: true,
+                groupId: group.id
+            });
 
-        // If there are no tabs in the group, continue to the next group
-        if (tabsInGroup.length === 0) {
+            // If there are no tabs in the group, continue to the next group
+            if (tabsInGroup.length === 0) {
+                continue;
+            }
+
+            // Calculate the start and end indices
+            const startIndex = Math.min(...tabsInGroup.map(tab => tab.index));
+            const endIndex = Math.max(...tabsInGroup.map(tab => tab.index));
+
+            // Store the indices in the object
+            groupIndices[group.id] = { start: startIndex, end: endIndex };
+        } catch (error) {
+            console.error(`Error querying tabs in group ${group.title}:`, error);
             continue;
         }
-
-        // Calculate the start and end indices
-        const startIndex = Math.min(...tabsInGroup.map(tab => tab.index));
-        const endIndex = Math.max(...tabsInGroup.map(tab => tab.index));
-
-        // Store the indices in the object
-        groupIndices[group.id] = { start: startIndex, end: endIndex };
     }
 
     // Sort the group IDs based on the order of the stored groups
@@ -166,10 +237,16 @@ export async function arrangeTabGroups() {
 
     // Make the groups contiguous by adjusting the start and end indices, the number of tabs in each group will be preserved
     // Initialize the current index to the number of pinned tabs
-    const pinnedTabs = await chrome.tabs.query({
-        currentWindow: true,
-        pinned: true
-    });
+    let pinnedTabs;
+    try {
+        pinnedTabs = await chrome.tabs.query({
+            currentWindow: true,
+            pinned: true
+        });
+    } catch (error) {
+        console.error("Error querying pinned tabs:", error);
+        return;
+    }
     let currentIndex = pinnedTabs.length;
 
     for (const groupId of sortedGroupIds) {
@@ -186,38 +263,78 @@ export async function arrangeTabGroups() {
 
     // Move the tab groups to the start indices calculated
     for (const groupId of sortedGroupIds) {
-        await chrome.tabGroups.move(groupId, {
-            index: groupIndices[groupId].start
-        });
+        try {
+            await chrome.tabGroups.move(groupId, {
+                index: groupIndices[groupId].start
+            });
+        } catch (error) {
+            console.error(`Error moving group ${groupId} to index ${groupIndices[groupId].start}:`, error);
+            continue;
+        }
     }
 
     // Delete any empty groups
     for (const group of tabGroups) {
-        const tabsInGroup = await chrome.tabs.query({
-            currentWindow: true,
-            groupId: group.id
-        });
+        let tabsInGroup;
+        try {
+            tabsInGroup = await chrome.tabs.query({
+                currentWindow: true,
+                groupId: group.id
+            });
+        } catch (error) {
+            console.error(`Error querying tabs in group ${group.title}:`, error);
+            continue;
+        }
 
-        // If there are no tabs in the group, remove the group
-        if (tabsInGroup.length === 0) {
-            await chrome.tabGroups.remove(group.id);
+        try {
+            // If there are no tabs in the group, remove the group
+            if (tabsInGroup.length === 0) {
+                await chrome.tabGroups.remove(group.id);
+            }
+        } catch (error) {
+            console.error(`Error removing empty group ${group.title}:`, error);
         }
     }
 }
 
 // Function to delete a group, the tabs in the group will be ungrouped and moved to the end of the tab list
 export async function deleteGroup(groupName) {
-    // Get all instances of the group by name in all windows
-    const groups = await chrome.tabGroups.query({ title: groupName });
+    // Get all instances of the group by name in all windows\
+    let groups;
+    try {
+        groups = await chrome.tabGroups.query({ title: groupName });
+    } catch (error) {
+        console.error(`Error querying groups with name ${groupName}:`, error);
+        return;
+    }
 
     for (const group of groups) {
         // Get all tabs in all windows
-        const tabsInGroup = await chrome.tabs.query({ groupId: group.id });
+        let tabsInGroup;
+        try {
+            tabsInGroup = await chrome.tabs.query({ groupId: group.id });
+        } catch (error) {
+            console.error(`Error querying tabs in group ${groupName}:`, error);
+            continue;
+        }
 
         // Ungroup the tabs and move them to the end of the tab list
         for (const tab of tabsInGroup) {
-            await chrome.tabs.ungroup(tab.id);
-            await chrome.tabs.move(tab.id, { index: -1 });
+            try {
+                // Ungroup the tab
+                await chrome.tabs.ungroup(tab.id);
+            } catch (error) {
+                console.error(`Error ungrouping tab ${tab.id} in group ${groupName}:`, error);
+                continue;
+            }
+
+            try {
+                // Move the tab to the end of the tab list
+                await chrome.tabs.move(tab.id, { index: -1 });
+            } catch (error) {
+                console.error(`Error moving tab ${tab.id} to the end of the tab list:`, error);
+                continue;
+            }
         }
     }
 

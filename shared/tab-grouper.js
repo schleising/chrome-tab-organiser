@@ -18,10 +18,8 @@ export async function getStoredGroups() {
         tab_groups = [];
     }
 
-    // Return a promise that resolves to the stored groups
-    return new Promise((resolve) => {
-        resolve(tab_groups);
-    });
+    // Return the stored groups
+    return tab_groups;
 }
 
 // Add a listener for tab updates

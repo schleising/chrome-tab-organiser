@@ -367,7 +367,6 @@ async function organiseAllTabs() {
     for (const tab of allTabs) {
         // Skip any chrome: tabs
         if (new URL(tab.url).protocol === 'chrome:') {
-            console.log(`Skipping chrome tab: ${tab.url}`);
             continue;
         }
 

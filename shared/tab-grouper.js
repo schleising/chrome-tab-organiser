@@ -2,6 +2,28 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
+// Function to store groups in local storage
+/** * 
+ * @param {StoredGroup[]} groups - An array of stored groups to save
+ * @returns {Promise<void>} - A promise that resolves when the groups are saved
+ */
+export async function storeGroups(groups) {
+    // Validate the input to ensure it is an array of StoredGroup objects
+    if (!Array.isArray(groups) || !groups.every(group => group && typeof group.name === 'string' && Array.isArray(group.urls) && group.urls.every(url => typeof url === 'string') && typeof group.colour === 'string')) {
+        console.error("Invalid groups format. Expected an array of StoredGroup objects.");
+        return
+    }
+
+    // Save the groups to chrome storage
+    try {
+        await chrome.storage.sync.set({ tab_groups: groups });
+    } catch (error) {
+        // If there is an error accessing storage, log it and throw an error
+        console.error("Error accessing storage:", error);
+    }
+}
+
+
 // Function to get the stored groups from local storage or initialise with an empty array
 /**
  * 

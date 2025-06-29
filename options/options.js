@@ -2,7 +2,7 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
-import { getStoredGroups, organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
+import { storeGroups, getStoredGroups, organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
     await initialiseOptionsDialog();
@@ -113,8 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         // Add the new group to the stored groups
-        await chrome.storage.sync.set({ tab_groups: storedGroups });
-
+        await storeGroups(storedGroups);
 
         // Organise all tabs in the current window
         await organiseAllTabs();
@@ -210,7 +209,7 @@ async function initialiseOptionsDialog() {
                     /** @type {StoredGroup[]} */
                     let storedGroups = await getStoredGroups();
                     storedGroups = storedGroups.filter(g => g.name !== group.name);
-                    await chrome.storage.sync.set({ tab_groups: storedGroups });
+                    await storeGroups(storedGroups);
 
                     // Refresh the options UI
                     await initialiseOptionsDialog();
@@ -300,7 +299,7 @@ async function initialiseOptionsDialog() {
             if (groupIndex > 0) {
                 // Swap with the previous group
                 [storedGroups[groupIndex - 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex - 1]];
-                await chrome.storage.sync.set({ tab_groups: storedGroups });
+                await storeGroups(storedGroups);
 
                 // Refresh the options UI
                 await initialiseOptionsDialog();
@@ -334,7 +333,7 @@ async function initialiseOptionsDialog() {
             if (groupIndex < storedGroups.length - 1) {
                 // Swap with the next group
                 [storedGroups[groupIndex + 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex + 1]];
-                await chrome.storage.sync.set({ tab_groups: storedGroups });
+                await storeGroups(storedGroups);
 
                 // Refresh the options UI
                 await initialiseOptionsDialog();

@@ -290,8 +290,16 @@ export async function arrangeTabGroups() {
                 index: groupIndices[groupId].start
             });
         } catch (error) {
-            console.error(`Error moving group ${groupId} to index ${groupIndices[groupId].start}:`, error);
-            continue;
+            // Try again after a short delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+            try {
+                await chrome.tabGroups.move(groupId, {
+                    index: groupIndices[groupId].start
+                });
+            } catch (retryError) {
+                console.error(`Retry failed for moving group ${groupId} to index ${groupIndices[groupId].start}:`, retryError);
+                continue;
+            }
         }
     }
 

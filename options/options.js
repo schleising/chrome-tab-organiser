@@ -380,7 +380,7 @@ async function organiseAllTabs() {
     }
 
     // After organising all tabs, arrange the tab groups
-    await arrangeTabGroups();
+    await arrangeTabGroups(null);
 }
 
 // Add an event listener for the "Organise All Tabs" button

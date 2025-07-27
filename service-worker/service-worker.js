@@ -42,6 +42,6 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
         await organiseTab(updatedTabId, updatedTab);
 
         // Arrange tab groups after the tab has been organised
-        await arrangeTabGroups();
+        await arrangeTabGroups(updatedTab.windowId);
     }
 });

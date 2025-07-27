@@ -105,7 +105,15 @@ export async function organiseTab(updatedTabId, updatedTab) {
                     index: -1 // Move to the end of the tab list
                 });
             } catch (error) {
-                console.error(`Error moving tab ${updatedTab.url} to the end:`, error);
+                // If the move fails, retry after a short delay
+                await new Promise(resolve => setTimeout(resolve, 100));
+                try {
+                    await chrome.tabs.move(updatedTabId, {
+                        index: -1 // Move to the end of the tab list
+                    });
+                } catch (retryError) {
+                    console.error(`Retry failed for moving tab ${updatedTab.url} to the end:`, retryError);
+                }
             }
         }
 

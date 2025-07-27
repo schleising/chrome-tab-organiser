@@ -118,7 +118,7 @@ export async function organiseTab(updatedTabId, updatedTab) {
     try {
         expectedGroup = await chrome.tabGroups.query({
             title: storedGroup.name,
-            windowId: chrome.windows.WINDOW_ID_CURRENT
+            windowId: updatedTab.windowId
         });
     } catch (error) {
         console.error(`Error querying group ${storedGroup.name}, ${updatedTab.url}:`, error);
@@ -128,6 +128,12 @@ export async function organiseTab(updatedTabId, updatedTab) {
     let expectedGroupId = null;
     if (expectedGroup.length > 0) {
         expectedGroupId = expectedGroup[0].id;
+    }
+
+    // If the expected group ID is null, log an error and return
+    if (expectedGroupId === null) {
+        console.error(`Expected group ID for group ${storedGroup.name} is null, cannot group tab ${updatedTab.url}`);
+        return;
     }
 
     // Get the initial group ID of the updated tab

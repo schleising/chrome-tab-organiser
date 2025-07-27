@@ -138,12 +138,6 @@ export async function organiseTab(updatedTabId, updatedTab) {
         expectedGroupId = expectedGroup[0].id;
     }
 
-    // If the expected group ID is null, log an error and return
-    if (expectedGroupId === null) {
-        console.error(`Expected group ID for group ${storedGroup.name} is null, cannot group tab ${updatedTab.url}`);
-        return;
-    }
-
     // Get the initial group ID of the updated tab
     const initialGroupId = updatedTab.groupId;
 

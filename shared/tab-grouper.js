@@ -190,8 +190,8 @@ export async function organiseTab(updatedTabId, updatedTab) {
             });
         }
     } catch (error) {
-        console.info(`Error grouping tab ${updatedTab.url} under group ${storedGroup.name}:`, error);
-        console.info("This is a race condition in the tab grouping API, either the tab is closing or has been closed or Chrome is starting.");
+        console.warn(`Error grouping tab ${updatedTab.url} under group ${storedGroup.name}:`, error);
+        console.warn("Likely transient tab-grouping race condition (tab closed/moving or browser starting).");
         return;
     }
 

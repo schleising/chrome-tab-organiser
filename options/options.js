@@ -219,6 +219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Hide the Cancel button
             const cancelButton = document.getElementById('cancel-edit');
             cancelButton.hidden = true;
+            cancelButton.onclick = null;
         } else {
             // If the button text does not start with "Update", we are creating a new group
             // Check if a group with the same name already exists
@@ -381,8 +382,8 @@ async function initialiseOptionsDialog() {
             const cancelButton = document.getElementById('cancel-edit');
             cancelButton.hidden = false;
 
-            // Add an event listener to the Cancel button to reset the form
-            cancelButton.addEventListener('click', function cancelEditHandler() {
+            // Use a single click handler so repeated edits do not stack listeners.
+            cancelButton.onclick = function cancelEditHandler() {
                 // Clear the input fields
                 document.getElementById('group-name').value = '';
                 document.getElementById('group-colour').value = 'blue';
@@ -397,10 +398,8 @@ async function initialiseOptionsDialog() {
 
                 // Hide the Cancel button
                 cancelButton.hidden = true;
-
-                // Remove this event listener
-                cancelButton.removeEventListener('click', cancelEditHandler);
-            });
+                cancelButton.onclick = null;
+            };
 
             // Scroll to the top of the page to show the input fields
             window.scrollTo(0, 0);
@@ -504,8 +503,19 @@ async function organiseAllTabs() {
 
     // Iterate through each tab and organise it
     for (const tab of allTabs) {
+        if (!tab.url) {
+            continue;
+        }
+
         // Skip any chrome: tabs
-        if (new URL(tab.url).protocol === 'chrome:') {
+        let tabUrl;
+        try {
+            tabUrl = new URL(tab.url);
+        } catch {
+            continue;
+        }
+
+        if (tabUrl.protocol === 'chrome:') {
             continue;
         }
 

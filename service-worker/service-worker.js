@@ -26,8 +26,16 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             return;
         }
 
+        if (!updatedTab.url) {
+            return;
+        }
+
         // Skip any chrome: tabs
-        if (new URL(updatedTab.url).protocol === 'chrome:') {
+        try {
+            if (new URL(updatedTab.url).protocol === 'chrome:') {
+                return;
+            }
+        } catch {
             return;
         }
 

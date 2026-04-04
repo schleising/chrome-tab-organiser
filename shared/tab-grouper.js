@@ -2,6 +2,36 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
+/** @type {Map<string, RegExp|null>} */
+const regexCache = new Map();
+
+function getCachedRegex(groupEntry) {
+    if (regexCache.has(groupEntry)) {
+        return regexCache.get(groupEntry);
+    }
+
+    let compiledRegex = null;
+
+    try {
+        if (groupEntry.startsWith('re:')) {
+            const pattern = groupEntry.slice(3).trim();
+            if (pattern) {
+                compiledRegex = new RegExp(pattern, 'i');
+            }
+        } else if (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0) {
+            const lastSlash = groupEntry.lastIndexOf('/');
+            const pattern = groupEntry.slice(1, lastSlash);
+            const flags = groupEntry.slice(lastSlash + 1);
+            compiledRegex = new RegExp(pattern, flags);
+        }
+    } catch {
+        compiledRegex = null;
+    }
+
+    regexCache.set(groupEntry, compiledRegex);
+    return compiledRegex;
+}
+
 // Function to store groups in local storage
 /** * 
  * @param {StoredGroup[]} groups - An array of stored groups to save
@@ -166,7 +196,7 @@ export async function organiseTab(updatedTabId, updatedTab) {
     }
 
     // Set the title and colour of the group
-    if (newGroupId) {
+    if (newGroupId !== null && newGroupId !== undefined) {
         try {
             await chrome.tabGroups.update(newGroupId, {
                 title: storedGroup.name,
@@ -297,6 +327,9 @@ export async function arrangeTabGroups(windowId) {
 
     for (const groupId of sortedGroupIds) {
         const group = groupIndices[groupId];
+        if (!group) {
+            continue;
+        }
         const groupSize = group.end - group.start + 1;
 
         // Adjust the start index to the current index
@@ -309,19 +342,24 @@ export async function arrangeTabGroups(windowId) {
 
     // Move the tab groups to the start indices calculated
     for (const groupId of sortedGroupIds) {
+        const targetGroup = groupIndices[groupId];
+        if (!targetGroup) {
+            continue;
+        }
+
         try {
             await chrome.tabGroups.move(groupId, {
-                index: groupIndices[groupId].start
+                index: targetGroup.start
             });
         } catch (error) {
             // Try again after a short delay
             await new Promise(resolve => setTimeout(resolve, 100));
             try {
                 await chrome.tabGroups.move(groupId, {
-                    index: groupIndices[groupId].start
+                    index: targetGroup.start
                 });
             } catch (retryError) {
-                console.error(`Retry failed for moving group ${groupId} to index ${groupIndices[groupId].start}:`, retryError);
+                console.error(`Retry failed for moving group ${groupId} to index ${targetGroup.start}:`, retryError);
                 continue;
             }
         }
@@ -398,6 +436,10 @@ export async function deleteGroup(groupName) {
 
 // Function to calculate the best group match based on number of characters in each URL matching
 function calculateBestGroupMatch(storedGroups, url) {
+    if (!url) {
+        return null;
+    }
+
     let bestMatch = null;
     let bestMatchCount = 0;
     const normalizedUrl = url.toLowerCase();
@@ -409,23 +451,12 @@ function calculateBestGroupMatch(storedGroups, url) {
             let isMatch = false;
 
             // Advanced regex support: `re:pattern` or `/pattern/flags`.
-            if (groupEntry.startsWith('re:')) {
-                const pattern = groupEntry.slice(3).trim();
-                if (pattern) {
-                    try {
-                        isMatch = new RegExp(pattern, 'i').test(url);
-                    } catch (error) {
-                        console.warn(`Invalid regex pattern in group ${group.name}: ${groupEntry}`, error);
-                    }
-                }
-            } else if (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0) {
-                const lastSlash = groupEntry.lastIndexOf('/');
-                const pattern = groupEntry.slice(1, lastSlash);
-                const flags = groupEntry.slice(lastSlash + 1);
-                try {
-                    isMatch = new RegExp(pattern, flags).test(url);
-                } catch (error) {
-                    console.warn(`Invalid regex literal in group ${group.name}: ${groupEntry}`, error);
+            if (groupEntry.startsWith('re:') || (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0)) {
+                const matcher = getCachedRegex(groupEntry);
+                if (matcher) {
+                    isMatch = matcher.test(url);
+                } else {
+                    console.warn(`Invalid regex entry in group ${group.name}: ${groupEntry}`);
                 }
             } else {
                 isMatch = normalizedUrl.includes(groupEntry.toLowerCase());

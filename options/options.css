@@ -103,6 +103,12 @@ label {
     gap: 0.45rem;
 }
 
+.field-hint {
+    margin: -0.1rem 0 0;
+    color: #475569;
+    font-size: 0.83rem;
+}
+
 .group-host-item {
     display: inline-flex;
     align-items: center;
@@ -113,6 +119,10 @@ label {
     border-radius: 999px;
     padding: 0.2rem 0.35rem 0.2rem 0.6rem;
     font-size: 0.92rem;
+}
+
+.regex-hostname {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 .host-remove-button {

@@ -400,16 +400,39 @@ export async function deleteGroup(groupName) {
 function calculateBestGroupMatch(storedGroups, url) {
     let bestMatch = null;
     let bestMatchCount = 0;
+    const normalizedUrl = url.toLowerCase();
 
     // Iterate through each stored group
     for (const group of storedGroups) {
         for (const groupUrl of group.urls) {
-            // Check if the URL includes the group URL
-            if (url.includes(groupUrl)) {
-                // Get the length of the group URL
-                const matchCount = groupUrl.length;
+            const groupEntry = groupUrl.trim();
+            let isMatch = false;
 
-                // If this is the best match so far, update the best match
+            // Advanced regex support: `re:pattern` or `/pattern/flags`.
+            if (groupEntry.startsWith('re:')) {
+                const pattern = groupEntry.slice(3).trim();
+                if (pattern) {
+                    try {
+                        isMatch = new RegExp(pattern, 'i').test(url);
+                    } catch (error) {
+                        console.warn(`Invalid regex pattern in group ${group.name}: ${groupEntry}`, error);
+                    }
+                }
+            } else if (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0) {
+                const lastSlash = groupEntry.lastIndexOf('/');
+                const pattern = groupEntry.slice(1, lastSlash);
+                const flags = groupEntry.slice(lastSlash + 1);
+                try {
+                    isMatch = new RegExp(pattern, flags).test(url);
+                } catch (error) {
+                    console.warn(`Invalid regex literal in group ${group.name}: ${groupEntry}`, error);
+                }
+            } else {
+                isMatch = normalizedUrl.includes(groupEntry.toLowerCase());
+            }
+
+            if (isMatch) {
+                const matchCount = groupEntry.length;
                 if (matchCount > bestMatchCount) {
                     bestMatchCount = matchCount;
                     bestMatch = group;

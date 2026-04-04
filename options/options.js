@@ -7,11 +7,56 @@ import { storeGroups, getStoredGroups, organiseTab, deleteGroup, arrangeTabGroup
 /** @type {string[]} */
 let pendingGroupUrls = [];
 
+function isRegexEntry(entry) {
+    const trimmed = entry.trim();
+    if (trimmed.startsWith('re:')) {
+        return true;
+    }
+
+    if (trimmed.startsWith('/')) {
+        const lastSlash = trimmed.lastIndexOf('/');
+        return lastSlash > 0;
+    }
+
+    return false;
+}
+
+function isValidRegexEntry(entry) {
+    const trimmed = entry.trim();
+
+    try {
+        if (trimmed.startsWith('re:')) {
+            const pattern = trimmed.slice(3).trim();
+            if (!pattern) {
+                return false;
+            }
+            new RegExp(pattern, 'i');
+            return true;
+        }
+
+        if (trimmed.startsWith('/')) {
+            const lastSlash = trimmed.lastIndexOf('/');
+            if (lastSlash <= 0) {
+                return false;
+            }
+            const pattern = trimmed.slice(1, lastSlash);
+            const flags = trimmed.slice(lastSlash + 1);
+            new RegExp(pattern, flags);
+            return true;
+        }
+    } catch {
+        return false;
+    }
+
+    return true;
+}
+
 function normaliseHostnames(rawValue) {
     return rawValue
-        .split(/[\s,]+/)
-        .map(url => url.trim().toLowerCase())
-        .filter(url => url.length > 0);
+        .split(',')
+        .map(url => url.trim())
+        .filter(url => url.length > 0)
+        .map(url => isRegexEntry(url) ? url : url.toLowerCase());
 }
 
 function renderPendingHostnames() {
@@ -24,6 +69,9 @@ function renderPendingHostnames() {
 
         const hostText = document.createElement('span');
         hostText.textContent = hostname;
+        if (isRegexEntry(hostname)) {
+            hostText.classList.add('regex-hostname');
+        }
         item.appendChild(hostText);
 
         const removeButton = document.createElement('button');
@@ -43,7 +91,19 @@ function renderPendingHostnames() {
 
 function addHostnamesFromInput() {
     const hostInput = document.getElementById('group-urls');
+    const groupError = document.getElementById('group-error');
     const parsedHostnames = normaliseHostnames(hostInput.value);
+
+    for (const hostname of parsedHostnames) {
+        if (!isValidRegexEntry(hostname)) {
+            groupError.textContent = `Invalid regex: ${hostname}`;
+            groupError.hidden = false;
+            return false;
+        }
+    }
+
+    groupError.textContent = '';
+    groupError.hidden = true;
 
     for (const hostname of parsedHostnames) {
         if (!pendingGroupUrls.includes(hostname)) {
@@ -53,6 +113,7 @@ function addHostnamesFromInput() {
 
     hostInput.value = '';
     renderPendingHostnames();
+    return true;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -80,7 +141,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Get the group name and colour from the input fields
         const groupName = document.getElementById('group-name').value.trim();
         const groupColour = document.getElementById('group-colour').value.trim();
-        addHostnamesFromInput();
+        if (!addHostnamesFromInput()) {
+            return;
+        }
 
         // Validate inputs
         if (!groupName || !groupColour || pendingGroupUrls.length === 0) {

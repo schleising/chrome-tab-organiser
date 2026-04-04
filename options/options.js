@@ -88,6 +88,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Reset the button text to "Create Group"
             createGroupButton.textContent = 'Create Group';
+            createGroupButton.classList.remove('btn-save');
+            createGroupButton.classList.add('btn-create');
             // Hide the Cancel button
             const cancelButton = document.getElementById('cancel-edit');
             cancelButton.hidden = true;
@@ -190,7 +192,7 @@ async function initialiseOptionsDialog() {
 
         // Create the delete button
         const deleteButton = document.createElement('button');
-        deleteButton.className = 'options-button';
+        deleteButton.className = 'options-button btn-delete';
         deleteButton.textContent = 'Delete Group';
 
         // Add an event listener to the delete button
@@ -229,7 +231,7 @@ async function initialiseOptionsDialog() {
 
         // Create the edit button
         const editButton = document.createElement('button');
-        editButton.className = 'options-button';
+        editButton.className = 'options-button btn-edit';
         editButton.textContent = 'Edit Group';
 
         // Add an event listener to the edit button
@@ -242,6 +244,8 @@ async function initialiseOptionsDialog() {
             // Set the button text to "Update <Group Name>"
             const createGroupButton = document.getElementById('create-group');
             createGroupButton.textContent = `Update ${group.name}`;
+            createGroupButton.classList.remove('btn-create');
+            createGroupButton.classList.add('btn-save');
 
             // Unhide the Cancel button
             const cancelButton = document.getElementById('cancel-edit');
@@ -256,6 +260,8 @@ async function initialiseOptionsDialog() {
 
                 // Reset the button text to "Create Group"
                 createGroupButton.textContent = 'Create Group';
+                createGroupButton.classList.remove('btn-save');
+                createGroupButton.classList.add('btn-create');
 
                 // Hide the Cancel button
                 cancelButton.hidden = true;
@@ -280,8 +286,9 @@ async function initialiseOptionsDialog() {
 
         // Create the up button
         const upButton = document.createElement('button');
-        upButton.className = 'options-button';
-        upButton.textContent = '▲';
+        upButton.className = 'options-button btn-up btn-icon-only';
+        upButton.textContent = '';
+        upButton.setAttribute('aria-label', 'Move group up');
 
         // Disable the up button if this is the first group
         if (storedGroups.indexOf(group) === 0) {
@@ -314,8 +321,9 @@ async function initialiseOptionsDialog() {
 
         // Create the down button
         const downButton = document.createElement('button');
-        downButton.className = 'options-button';
-        downButton.textContent = '▼';
+        downButton.className = 'options-button btn-down btn-icon-only';
+        downButton.textContent = '';
+        downButton.setAttribute('aria-label', 'Move group down');
 
         // Disable the down button if this is the last group
         if (storedGroups.indexOf(group) === storedGroups.length - 1) {

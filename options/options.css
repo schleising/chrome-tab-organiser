@@ -74,8 +74,27 @@ label {
     border: 1px solid #9aa3b2;
     border-radius: 0.55rem;
     background: #fff;
+    color: #111;
     padding: 0.5rem 0.7rem;
     font-size: 1rem;
+}
+
+/* Keep the selected colour control neutral so the colour dot stays readable */
+#group-colour > .options-button {
+    background: #fff;
+    color: #111;
+    box-shadow: none;
+    border: 1px solid #9aa3b2;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+/* Drop selected text slightly to visually align with the larger colour dot */
+#group-colour > .options-button > selectedcontent {
+    display: inline-flex;
+    align-items: center;
+    transform: translateY(1px);
 }
 
 .group-input:focus,
@@ -174,6 +193,76 @@ label {
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 3px 8px rgba(47, 128, 216, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.38rem;
+}
+
+.options-button::before {
+    content: "";
+    width: 0.92rem;
+    height: 0.92rem;
+    display: none;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    flex: 0 0 auto;
+}
+
+.btn-organise::before,
+.btn-create::before,
+.btn-save::before,
+.btn-cancel::before,
+.btn-ok::before,
+.btn-delete::before,
+.btn-edit::before,
+.btn-up::before,
+.btn-down::before {
+    display: inline-block;
+}
+
+.btn-icon-only {
+    padding: 0;
+}
+
+.btn-icon-only::before {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
+/* Inline SVG icons */
+.btn-organise::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18M3 6h12M3 18h8'/%3E%3C/svg%3E");
+}
+
+.btn-create::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+}
+
+.btn-save::before,
+.btn-ok::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+.btn-cancel::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+}
+
+.btn-delete::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M8 6V4h8v2M9 10v7M15 10v7M6 6l1 14h10l1-14'/%3E%3C/svg%3E");
+}
+
+.btn-edit::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c7f7d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z'/%3E%3C/svg%3E");
+}
+
+.btn-up::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2937' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
+}
+
+.btn-down::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2937' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .header .options-button {
@@ -221,6 +310,21 @@ label {
 select,
 ::picker(select) {
     appearance: base-select;
+}
+
+/* Make colour dots in the Group Colour dropdown easier to see */
+#group-colour .blue,
+#group-colour .red,
+#group-colour .yellow,
+#group-colour .green,
+#group-colour .pink,
+#group-colour .purple,
+#group-colour .cyan,
+#group-colour .orange,
+#group-colour .grey {
+    font-size: 1.25em;
+    font-weight: 700;
+    vertical-align: middle;
 }
 
 /* Dot text colours and header accents for group colours */

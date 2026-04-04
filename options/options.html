@@ -12,7 +12,7 @@
 <body>
   <div class="header">
     <h1>Options</h1>
-    <button id="organise-all-tabs" class="options-button">Organise All Tabs</button>
+    <button id="organise-all-tabs" class="options-button btn-organise">Organise All Tabs</button>
   </div>
   <div class="new-group">
     <div class="new-group-container">
@@ -37,8 +37,8 @@
         <option value="cyan"><span class="cyan">●</span> Cyan</option>
       </select>
       <div class="group-buttons">
-        <button type="submit" id="create-group" class="options-button">Create Group</button>
-        <button type="button" id="cancel-edit" class="options-button" hidden>Cancel Edit</button>
+        <button type="submit" id="create-group" class="options-button btn-create">Create Group</button>
+        <button type="button" id="cancel-edit" class="options-button btn-cancel" hidden>Cancel Edit</button>
       </div>
       <p id="group-error" class="error-message" hidden></p>
     </div>
@@ -50,8 +50,8 @@
         <h2>Confirm Action</h2>
         <p id="confirm-message"></p>
         <div class="dialog-buttons">
-          <button value="ok" class="options-button">OK</button>
-          <button value="cancel" class="options-button">Cancel</button>
+          <button value="ok" class="options-button btn-ok">OK</button>
+          <button value="cancel" class="options-button btn-cancel">Cancel</button>
         </div>
       </div>
     </form>

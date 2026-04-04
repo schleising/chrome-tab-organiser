@@ -79,6 +79,57 @@ label {
     font-size: 1rem;
 }
 
+.host-input-row {
+    display: flex;
+    gap: 0.45rem;
+    align-items: stretch;
+}
+
+.host-input-row .group-input {
+    flex: 1;
+}
+
+.host-input-row .options-button {
+    flex: 0 0 auto;
+    min-width: 5.2rem;
+}
+
+.group-host-list {
+    list-style: none;
+    margin: 0.2rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.group-host-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #eef2f8;
+    border: 1px solid #d4dbe6;
+    color: #0f172a;
+    border-radius: 999px;
+    padding: 0.2rem 0.35rem 0.2rem 0.6rem;
+    font-size: 0.92rem;
+}
+
+.host-remove-button {
+    width: 1.2rem;
+    height: 1.2rem;
+    border: none;
+    border-radius: 50%;
+    background: #d8dee9;
+    color: #1f2937;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
 /* Keep the selected colour control neutral so the colour dot stays readable */
 #group-colour > .options-button {
     background: #fff;
@@ -211,6 +262,7 @@ label {
 }
 
 .btn-organise::before,
+.btn-add::before,
 .btn-create::before,
 .btn-save::before,
 .btn-cancel::before,
@@ -238,6 +290,10 @@ label {
 
 .btn-create::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+}
+
+.btn-add::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
 }
 
 .btn-save::before,

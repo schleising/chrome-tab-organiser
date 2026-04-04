@@ -4,7 +4,70 @@
 
 import { storeGroups, getStoredGroups, organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
 
+/** @type {string[]} */
+let pendingGroupUrls = [];
+
+function normaliseHostnames(rawValue) {
+    return rawValue
+        .split(/[\s,]+/)
+        .map(url => url.trim().toLowerCase())
+        .filter(url => url.length > 0);
+}
+
+function renderPendingHostnames() {
+    const hostList = document.getElementById('group-host-list');
+    hostList.innerHTML = '';
+
+    pendingGroupUrls.forEach((hostname, index) => {
+        const item = document.createElement('li');
+        item.className = 'group-host-item';
+
+        const hostText = document.createElement('span');
+        hostText.textContent = hostname;
+        item.appendChild(hostText);
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'host-remove-button';
+        removeButton.setAttribute('aria-label', `Remove ${hostname}`);
+        removeButton.textContent = '×';
+        removeButton.addEventListener('click', () => {
+            pendingGroupUrls.splice(index, 1);
+            renderPendingHostnames();
+        });
+
+        item.appendChild(removeButton);
+        hostList.appendChild(item);
+    });
+}
+
+function addHostnamesFromInput() {
+    const hostInput = document.getElementById('group-urls');
+    const parsedHostnames = normaliseHostnames(hostInput.value);
+
+    for (const hostname of parsedHostnames) {
+        if (!pendingGroupUrls.includes(hostname)) {
+            pendingGroupUrls.push(hostname);
+        }
+    }
+
+    hostInput.value = '';
+    renderPendingHostnames();
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+    const addHostnameButton = document.getElementById('add-hostname');
+    const hostInput = document.getElementById('group-urls');
+
+    addHostnameButton.addEventListener('click', addHostnamesFromInput);
+    hostInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addHostnamesFromInput();
+        }
+    });
+
+    renderPendingHostnames();
     await initialiseOptionsDialog();
 
     // Add event listener for the "Create Group" button
@@ -17,10 +80,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Get the group name and colour from the input fields
         const groupName = document.getElementById('group-name').value.trim();
         const groupColour = document.getElementById('group-colour').value.trim();
-        const groupUrls = document.getElementById('group-urls').value.trim();
+        addHostnamesFromInput();
 
         // Validate inputs
-        if (!groupName || !groupColour || !groupUrls) {
+        if (!groupName || !groupColour || pendingGroupUrls.length === 0) {
             // Show error message if inputs are invalid
             document.getElementById('group-error').textContent = "Invalid input: group name, colour, and URLs are required.";
             document.getElementById('group-error').hidden = false;
@@ -37,7 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         /** @type {StoredGroup} */
         const newGroup = {
             name: groupName,
-            urls: groupUrls.split(',').map(url => url.trim().toLowerCase()), // Split URLs by comma and trim whitespace
+            urls: [...pendingGroupUrls],
             colour: groupColour
         };
 
@@ -127,6 +190,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('group-name').value = '';
         document.getElementById('group-colour').value = 'blue';
         document.getElementById('group-urls').value = '';
+        pendingGroupUrls = [];
+        renderPendingHostnames();
     });
 });
 
@@ -239,7 +304,9 @@ async function initialiseOptionsDialog() {
             // Populate the input fields with the group's data for editing
             document.getElementById('group-name').value = group.name;
             document.getElementById('group-colour').value = group.colour;
-            document.getElementById('group-urls').value = group.urls.join(', ');
+            document.getElementById('group-urls').value = '';
+            pendingGroupUrls = [...group.urls];
+            renderPendingHostnames();
 
             // Set the button text to "Update <Group Name>"
             const createGroupButton = document.getElementById('create-group');
@@ -257,6 +324,8 @@ async function initialiseOptionsDialog() {
                 document.getElementById('group-name').value = '';
                 document.getElementById('group-colour').value = 'blue';
                 document.getElementById('group-urls').value = '';
+                pendingGroupUrls = [];
+                renderPendingHostnames();
 
                 // Reset the button text to "Create Group"
                 createGroupButton.textContent = 'Create Group';

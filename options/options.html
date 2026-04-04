@@ -19,8 +19,12 @@
       <h2>Create New Group</h2>
       <label for="group-name">Group Name:</label>
       <input type="text" id="group-name" name="group-name" class="group-input" required>
-      <label for="group-urls">Group Hostnames (comma separated):</label>
-      <input type="text" id="group-urls" name="group-urls" class="group-input" required>
+      <label for="group-urls">Group Hostname:</label>
+      <div class="host-input-row">
+        <input type="text" id="group-urls" name="group-urls" class="group-input" placeholder="example.com">
+        <button type="button" id="add-hostname" class="options-button btn-add">Add</button>
+      </div>
+      <ul id="group-host-list" class="group-host-list"></ul>
       <label for="group-colour">Group Colour:</label>
       <select id="group-colour" name="group-colour" class="group-colour-select" required>
         <button class="options-button">

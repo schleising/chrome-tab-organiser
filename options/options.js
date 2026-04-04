@@ -135,13 +135,13 @@ async function initialiseOptionsDialog() {
 
     // Populate the options UI with the stored groups
     const optionsContainer = document.getElementById('existing-group-container');
-    optionsContainer.innerHTML = ''; // Clear existing content
+    optionsContainer.innerHTML = ''; // Clear existing content before re-render
 
     // Build the UI for each stored group
     storedGroups.forEach(group => {
         // Create a new element for the group
         const groupElement = document.createElement('div');
-        groupElement.className = 'existing-group';
+        groupElement.className = `existing-group ${group.colour}`;
 
         // Create the header for the group
         const groupHeaderElement = document.createElement('div');

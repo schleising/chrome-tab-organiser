@@ -1,50 +1,88 @@
+:root {
+    --bg: #eff3f7;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #4b5563;
+    --line: #d8dee7;
+    --teal: #0aa7a7;
+    --teal-dark: #078f8f;
+}
+
+body {
+    font-family: 'Roboto', system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.4;
+    margin: 0;
+    padding: 0.85rem;
+    background: radial-gradient(circle at 15% -30%, #f8fbff 0%, var(--bg) 56%);
+}
+
 .header {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 0.75rem;
 }
 
-/* Use Roboto from Google Fonts */
-body {
-    font-family: 'Roboto', system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    font-size: 14px;
-    color: #111;
-    line-height: 1.4;
+.header h1 {
+    margin: 0;
+    font-size: 1.95rem;
+    letter-spacing: -0.02em;
 }
 
 .new-group,
+.existing-group,
 .dialog-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
     width: 100%;
-    border: 0.075rem solid silver;
-    border-radius: 0.5rem;
-    background-color: hsl(219, 79%, 98%);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    border-radius: 0.9rem;
+    background-color: var(--card);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
-.new-group:hover {
-    background-color: hsl(219, 79%, 96%);
+.new-group {
+    margin-bottom: 0.75rem;
 }
 
 .new-group-container {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin: 0.25rem;
-    width: -webkit-fill-available;
+    gap: 0.5rem;
+    margin: 0.75rem;
 }
 
-
-.new-group-container>* {
-    margin: 0.25rem;
+.new-group-container > * {
+    margin: 0;
 }
 
-.group-input {
-    width: -webkit-fill-available;
+.new-group-container h2 {
+    font-size: 1.9rem;
+    line-height: 1.1;
+}
+
+label {
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.group-input,
+.group-colour-select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #9aa3b2;
+    border-radius: 0.55rem;
+    background: #fff;
+    padding: 0.5rem 0.7rem;
+    font-size: 1rem;
+}
+
+.group-input:focus,
+.group-colour-select:focus {
+    outline: none;
+    border-color: var(--teal-dark);
+    box-shadow: 0 0 0 3px rgba(10, 167, 167, 0.16);
 }
 
 .group-buttons {
@@ -52,39 +90,18 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    width: -webkit-fill-available;
-}
-
-.group-buttons>* {
-    margin-right: 0.5rem;
+    gap: 0.5rem;
+    margin-top: 0.2rem;
 }
 
 .existing-group-container {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
-    width: 100%;
+    gap: 0.75rem;
 }
 
 .existing-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
-    width: 100%;
-    border: 0.075rem solid silver;
-    border-radius: 0.5rem;
-    margin-top: 0.5rem;
-    background-color: hsl(219, 79%, 98%);
-}
-
-.existing-group:hover {
-    background-color: hsl(219, 79%, 96%);
-}
-
-.existing-group>* {
-    margin: 0.25rem;
+    overflow: hidden;
 }
 
 .existing-group-header {
@@ -92,19 +109,27 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-top: 3px solid transparent;
 }
 
-.existing-group-header>* {
-    margin: 0.25rem;
-    width: 100%;
+.existing-group-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
 }
 
-.existing-group-urls {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
+.group-colour {
+    margin: 0;
+    text-align: right;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.existing-group ul {
+    margin: 0.5rem 0 0.5rem 2.2rem;
+    color: #0f172a;
+    font-size: 1rem;
 }
 
 .existing-group-buttons {
@@ -112,7 +137,7 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    width: -webkit-fill-available;
+    padding: 0.45rem 0.75rem 0.75rem;
 }
 
 .edit-delete-buttons {
@@ -120,10 +145,7 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-}
-
-.edit-delete-buttons>* {
-    margin: 0.25rem;
+    gap: 0.5rem;
 }
 
 .up-down-buttons {
@@ -131,33 +153,69 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
-}
-
-.up-down-buttons>* {
-    margin: 0.25rem;
+    gap: 0.5rem;
 }
 
 .error-message {
-    color: red;
-    font-weight: bold;
+    color: #b91c1c;
+    font-weight: 700;
 }
 
 .options-button,
 .group-colour-select {
-    border: 0.075rem solid silver;
-    border-radius: 0.25rem;
-    background-color: hsl(219, 79%, 94%);
-    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 0.55rem;
+    padding: 0.35rem 0.7rem;
+}
+
+.options-button {
+    background: #2f80d8;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(47, 128, 216, 0.25);
+}
+
+.header .options-button {
+    background: linear-gradient(180deg, #11b6b5, #0aa7a7);
+    box-shadow: 0 4px 12px rgba(10, 167, 167, 0.35);
+}
+
+.edit-delete-buttons .options-button {
+    background: #f2f4f7;
+    color: #111827;
+    box-shadow: none;
+    border-color: #cfd6df;
+}
+
+.edit-delete-buttons .options-button + .options-button {
+    background: #ecf9f8;
+    color: #0c7f7d;
+    border-color: #6bbdbb;
+}
+
+.up-down-buttons .options-button {
+    width: 2.2rem;
+    height: 1.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-weight: 800;
+    background: #f3f4f6;
+    color: #1f2937;
+    border-color: #cfd6df;
+    box-shadow: none;
+}
+
+.up-down-buttons .options-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .options-button:hover,
 .group-colour-select:hover {
-    background-color: hsl(219, 79%, 92%);
-}
-
-.group-colour {
-    text-align: right;
-    padding-right: 0.5rem;
+    filter: brightness(0.98);
 }
 
 select,
@@ -165,47 +223,36 @@ select,
     appearance: base-select;
 }
 
-.blue {
-    color: rgb(56, 113, 224);
-}
+/* Dot text colours and header accents for group colours */
+.blue { color: rgb(56, 113, 224); }
+.red { color: rgb(200, 64, 49); }
+.yellow { color: rgb(238, 174, 60); }
+.green { color: rgb(60, 126, 64); }
+.pink { color: rgb(191, 48, 130); }
+.purple { color: rgb(149, 71, 233); }
+.cyan { color: rgb(52, 119, 127); }
+.orange { color: rgb(231, 146, 78); }
+.grey { color: rgb(96, 99, 103); }
 
-.red {
-    color: rgb(200, 64, 49);
-}
-
-.yellow {
-    color: rgb(238, 174, 60);
-}
-
-.green {
-    color: rgb(60, 126, 64);
-}
-
-.pink {
-    color: rgb(191, 48, 130);
-}
-
-.purple {
-    color: rgb(149, 71, 233);
-}
-
-.cyan {
-    color: rgb(52, 119, 127);
-}
-
-.orange {
-    color: rgb(231, 146, 78);
-}
-
-.grey {
-    color: rgb(96, 99, 103);
-}
+.existing-group.blue .existing-group-header { background: #e8eefc; border-top-color: rgb(56, 113, 224); }
+.existing-group.red .existing-group-header { background: #fdeceb; border-top-color: rgb(200, 64, 49); }
+.existing-group.yellow .existing-group-header { background: #fff6df; border-top-color: rgb(238, 174, 60); }
+.existing-group.green .existing-group-header { background: #e9f5ea; border-top-color: rgb(60, 126, 64); }
+.existing-group.pink .existing-group-header { background: #fdeaf5; border-top-color: rgb(191, 48, 130); }
+.existing-group.purple .existing-group-header { background: #f2eafd; border-top-color: rgb(149, 71, 233); }
+.existing-group.cyan .existing-group-header { background: #e8f4f6; border-top-color: rgb(52, 119, 127); }
+.existing-group.orange .existing-group-header { background: #fef1e6; border-top-color: rgb(231, 146, 78); }
+.existing-group.grey .existing-group-header { background: #edf0f3; border-top-color: rgb(96, 99, 103); }
 
 dialog {
-    border: 0.075rem solid silver;
-    border-radius: 0.5rem;
-    background-color: hsl(219, 79%, 98%);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 0.8rem;
+    background-color: transparent;
     padding: 0;
+}
+
+dialog::backdrop {
+    background: rgba(15, 23, 42, 0.34);
 }
 
 .dialog-buttons {
@@ -213,12 +260,14 @@ dialog {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
+    gap: 0.5rem;
 }
 
-.dialog-container>* {
-    margin: 0.5rem;
+.dialog-container {
+    padding: 0.8rem;
 }
 
-.dialog-buttons>* {
-    margin-right: 0.5rem;
+.dialog-container > * {
+    margin: 0 0 0.5rem;
 }
+

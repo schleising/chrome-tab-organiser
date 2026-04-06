@@ -12,12 +12,12 @@
 <body>
   <div class="header">
     <h1>Options</h1>
+    <div class="header-actions data-tools-buttons">
+      <button id="export-groups" type="button" class="options-button btn-export btn-icon-only header-icon-button" aria-label="Export Groups" title="Export Groups"></button>
+      <button id="import-groups" type="button" class="options-button btn-import btn-icon-only header-icon-button" aria-label="Import Groups" title="Import Groups"></button>
+    </div>
   </div>
   <div class="data-tools">
-    <div class="data-tools-buttons">
-      <button id="export-groups" type="button" class="options-button btn-export">Export Groups</button>
-      <button id="import-groups" type="button" class="options-button btn-import">Import Groups</button>
-    </div>
     <p id="data-tools-status" class="field-hint data-tools-status" hidden></p>
     <input id="import-groups-file" type="file" accept="application/json,.json" hidden>
   </div>

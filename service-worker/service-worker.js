@@ -212,54 +212,63 @@ void queueContextMenuRebuild();
 
 // Add a listener for tab updates
 chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) => {
-    if (changeInfo.status !== 'complete') {
-        return;
-    }
-
-    // If the tab is closing, we do not want to organise it
     try {
-        await chrome.tabs.get(updatedTabId);
-    } catch {
-        // If the tab is not found, it means it is closing or has been closed
-        return;
-    }
-
-    if (!updatedTab.url) {
-        return;
-    }
-
-    // Avoid reprocessing identical completed URL updates for the same tab.
-    if (lastProcessedTabUrls.get(updatedTabId) === updatedTab.url) {
-        return;
-    }
-
-    // Skip any chrome: tabs
-    try {
-        if (new URL(updatedTab.url).protocol === 'chrome:') {
+        if (changeInfo.status !== 'complete') {
             return;
         }
-    } catch {
-        return;
+
+        // If the tab is closing, we do not want to organise it
+        try {
+            await chrome.tabs.get(updatedTabId);
+        } catch {
+            // If the tab is not found, it means it is closing or has been closed
+            return;
+        }
+
+        if (!updatedTab.url) {
+            return;
+        }
+
+        // Avoid reprocessing identical completed URL updates for the same tab.
+        if (lastProcessedTabUrls.get(updatedTabId) === updatedTab.url) {
+            return;
+        }
+
+        // Skip any chrome: tabs
+        try {
+            if (new URL(updatedTab.url).protocol === 'chrome:') {
+                return;
+            }
+        } catch {
+            return;
+        }
+
+        // Get the window type to ensure we are only processing tabs in a normal window
+        const windowInfo = await chrome.windows.get(updatedTab.windowId);
+        if (windowInfo.type !== 'normal') {
+            // If the window is not normal, we do not want to group the tab, so return
+            return;
+        }
+
+        const storedGroups = await getStoredGroups();
+        if (storedGroups.length === 0) {
+            return;
+        }
+
+        // Call the organiseTab function to handle the tab grouping logic
+        await organiseTab(updatedTabId, updatedTab, storedGroups);
+        lastProcessedTabUrls.set(updatedTabId, updatedTab.url);
+
+        // Arrange tab groups after updates settle to avoid repeated churn.
+        scheduleArrangeTabGroups(updatedTab.windowId);
+    } catch (error) {
+        console.error('Error handling tab update for grouping:', {
+            tabId: updatedTabId,
+            windowId: updatedTab?.windowId,
+            url: updatedTab?.url,
+            error
+        });
     }
-
-    // Get the window type to ensure we are only processing tabs in a normal window
-    const windowInfo = await chrome.windows.get(updatedTab.windowId);
-    if (windowInfo.type !== 'normal') {
-        // If the window is not normal, we do not want to group the tab, so return
-        return;
-    }
-
-    const storedGroups = await getStoredGroups();
-    if (storedGroups.length === 0) {
-        return;
-    }
-
-    // Call the organiseTab function to handle the tab grouping logic
-    await organiseTab(updatedTabId, updatedTab, storedGroups);
-    lastProcessedTabUrls.set(updatedTabId, updatedTab.url);
-
-    // Arrange tab groups after updates settle to avoid repeated churn.
-    scheduleArrangeTabGroups(updatedTab.windowId);
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {

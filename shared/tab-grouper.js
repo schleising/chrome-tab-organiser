@@ -188,16 +188,16 @@ async function arrangeTabsWithinGroup(windowId, groupId, groupUrls, groupStartIn
 export async function storeGroups(groups) {
     // Validate the input to ensure it is an array of StoredGroup objects
     if (!Array.isArray(groups) || !groups.every(group => group && typeof group.name === 'string' && Array.isArray(group.urls) && group.urls.every(url => typeof url === 'string') && typeof group.colour === 'string')) {
-        console.error("Invalid groups format. Expected an array of StoredGroup objects.");
-        return;
+        throw new Error('Invalid groups format. Expected an array of StoredGroup objects.');
     }
 
     // Save the groups to chrome storage
     try {
         await chrome.storage.sync.set({ tab_groups: groups });
     } catch (error) {
-        // If there is an error accessing storage, log it and throw an error
+        // If there is an error accessing storage, log it and rethrow so callers can react.
         console.error("Error accessing storage:", error);
+        throw error;
     }
 }
 
@@ -583,7 +583,7 @@ export async function deleteGroup(groupName) {
     }
 
     // Arrange the tab groups to make them contiguous after deletion
-    await arrangeTabGroups(null);
+    await arrangeTabGroups();
 }
 
 // Function to calculate the best group match based on number of characters in each URL matching

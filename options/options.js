@@ -27,6 +27,14 @@ let draggingGroupName = null;
 
 let dataToolsStatusTimeoutId = null;
 
+function getErrorMessage(error, fallbackMessage) {
+    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message.trim()) {
+        return error.message;
+    }
+
+    return fallbackMessage;
+}
+
 function isRegexEntry(entry) {
     const trimmed = entry.trim();
     return trimmed.startsWith('re:');
@@ -292,9 +300,13 @@ async function persistDraggedGroupOrder(optionsContainer) {
         return;
     }
 
-    storedGroups = reorderedGroups;
-    await storeGroups(storedGroups);
-    await organiseAllTabs({ arrangeOnly: true });
+    try {
+        storedGroups = reorderedGroups;
+        await storeGroups(storedGroups);
+        await organiseAllTabs({ arrangeOnly: true });
+    } catch (error) {
+        setDataToolsStatus(`Couldn't save group order: ${getErrorMessage(error, 'Unknown error')}. Try again in a moment.`, true);
+    }
 }
 
 function setHostnameInputButtonMode(isUpdate) {
@@ -426,11 +438,15 @@ async function persistChipOrderForEditedGroup() {
         return;
     }
 
-    storedGroups[groupIndex].urls = [...pendingGroupUrls];
-    await storeGroups(storedGroups);
+    try {
+        storedGroups[groupIndex].urls = [...pendingGroupUrls];
+        await storeGroups(storedGroups);
 
-    // Reorder tabs once after chip drag finishes; no live tab reorder during drag.
-    await organiseAllTabs({ arrangeOnly: true });
+        // Reorder tabs once after chip drag finishes; no live tab reorder during drag.
+        await organiseAllTabs({ arrangeOnly: true });
+    } catch (error) {
+        showGroupError(`Couldn't save hostname order: ${getErrorMessage(error, 'Unknown error')}. Try again in a moment.`);
+    }
 }
 
 function cancelCurrentGroupEdit() {
@@ -955,16 +971,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        // Add the new group to the stored groups
-        await storeGroups(storedGroups);
+        try {
+            // Add the new group to the stored groups
+            await storeGroups(storedGroups);
 
-        // Organise all tabs in the current window
-        await organiseAllTabs();
+            // Organise all tabs in the current window
+            await organiseAllTabs();
 
-        // Refresh the options UI to show the new group
-        await initialiseOptionsDialog();
+            // Refresh the options UI to show the new group
+            await initialiseOptionsDialog();
 
-        clearGroupForm();
+            clearGroupForm();
+        } catch (error) {
+            showGroupError(`Couldn't save group changes: ${getErrorMessage(error, 'Unknown error')}. Try again in a moment.`);
+        }
     });
 
     // Keep the options UI in sync when groups are changed outside this page (e.g. context menu actions).
@@ -1112,20 +1132,24 @@ async function initialiseOptionsDialog() {
 
             dialog.addEventListener('close', async function dialogHandler() {
                 if (dialog.returnValue === 'ok') {
-                    // Remove the group from storage
-                    /** @type {StoredGroup[]} */
-                    let storedGroups = await getStoredGroups();
-                    storedGroups = storedGroups.filter(g => g.name !== group.name);
-                    await storeGroups(storedGroups);
+                    try {
+                        // Remove the group from storage
+                        /** @type {StoredGroup[]} */
+                        let storedGroups = await getStoredGroups();
+                        storedGroups = storedGroups.filter(g => g.name !== group.name);
+                        await storeGroups(storedGroups);
 
-                    // Refresh the options UI
-                    await initialiseOptionsDialog();
+                        // Refresh the options UI
+                        await initialiseOptionsDialog();
 
-                    // Organise all tabs in the current window
-                    await deleteGroup(group.name);
+                        // Organise all tabs in the current window
+                        await deleteGroup(group.name);
 
-                    // Organise all tabs in the current window
-                    await organiseAllTabs();
+                        // Organise all tabs in the current window
+                        await organiseAllTabs();
+                    } catch (error) {
+                        showGroupError(`Couldn't delete group: ${getErrorMessage(error, 'Unknown error')}. Try again in a moment.`);
+                    }
                 }
                 dialog.removeEventListener('close', dialogHandler); // Clean up
             });
@@ -1192,22 +1216,26 @@ async function initialiseOptionsDialog() {
 
         // Add an event listener to the up button
         upButton.addEventListener('click', async () => {
-            // Get the stored groups from local storage
-            /** @type {StoredGroup[]} */
-            let storedGroups = await getStoredGroups();
+            try {
+                // Get the stored groups from local storage
+                /** @type {StoredGroup[]} */
+                let storedGroups = await getStoredGroups();
 
-            // Find the index of the current group
-            const groupIndex = storedGroups.findIndex(g => g.name === group.name);
-            if (groupIndex > 0) {
-                // Swap with the previous group
-                [storedGroups[groupIndex - 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex - 1]];
-                await storeGroups(storedGroups);
+                // Find the index of the current group
+                const groupIndex = storedGroups.findIndex(g => g.name === group.name);
+                if (groupIndex > 0) {
+                    // Swap with the previous group
+                    [storedGroups[groupIndex - 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex - 1]];
+                    await storeGroups(storedGroups);
 
-                // Animate the DOM reorder in-place for smoother movement feedback.
-                animateGroupReorder(optionsContainer, group.name, 'up');
+                    // Animate the DOM reorder in-place for smoother movement feedback.
+                    animateGroupReorder(optionsContainer, group.name, 'up');
 
-                // Only ordering changed, so avoid a full re-match pass.
-                await organiseAllTabs({ arrangeOnly: true });
+                    // Only ordering changed, so avoid a full re-match pass.
+                    await organiseAllTabs({ arrangeOnly: true });
+                }
+            } catch (error) {
+                setDataToolsStatus(`Couldn't move group up: ${getErrorMessage(error, 'Unknown error')}. Try again in a moment.`, true);
             }
         });
 
@@ -1227,22 +1255,26 @@ async function initialiseOptionsDialog() {
 
         // Add an event listener to the down button
         downButton.addEventListener('click', async () => {
-            // Get the stored groups from local storage
-            /** @type {StoredGroup[]} */
-            let storedGroups = await getStoredGroups();
+            try {
+                // Get the stored groups from local storage
+                /** @type {StoredGroup[]} */
+                let storedGroups = await getStoredGroups();
 
-            // Find the index of the current group
-            const groupIndex = storedGroups.findIndex(g => g.name === group.name);
-            if (groupIndex < storedGroups.length - 1) {
-                // Swap with the next group
-                [storedGroups[groupIndex + 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex + 1]];
-                await storeGroups(storedGroups);
+                // Find the index of the current group
+                const groupIndex = storedGroups.findIndex(g => g.name === group.name);
+                if (groupIndex < storedGroups.length - 1) {
+                    // Swap with the next group
+                    [storedGroups[groupIndex + 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex + 1]];
+                    await storeGroups(storedGroups);
 
-                // Animate the DOM reorder in-place for smoother movement feedback.
-                animateGroupReorder(optionsContainer, group.name, 'down');
+                    // Animate the DOM reorder in-place for smoother movement feedback.
+                    animateGroupReorder(optionsContainer, group.name, 'down');
 
-                // Only ordering changed, so avoid a full re-match pass.
-                await organiseAllTabs({ arrangeOnly: true });
+                    // Only ordering changed, so avoid a full re-match pass.
+                    await organiseAllTabs({ arrangeOnly: true });
+                }
+            } catch (error) {
+                setDataToolsStatus(`Couldn't move group down: ${getErrorMessage(error, 'Unknown error')}. Try again in a moment.`, true);
             }
         });
 

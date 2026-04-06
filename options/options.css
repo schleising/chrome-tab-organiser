@@ -198,6 +198,10 @@ label {
     min-width: 5.2rem;
 }
 
+#add-hostname {
+    font-size: 1.08rem;
+}
+
 .group-host-list {
     list-style: none;
     margin: 0.2rem 0 0;

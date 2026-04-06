@@ -196,8 +196,27 @@ body {
     gap: 0;
 }
 
-.new-group.is-collapsed .new-group-container > :not(.new-group-heading) {
-    display: none;
+.new-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 640px;
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        max-height 300ms ease-out,
+        opacity 240ms ease-out,
+        transform 300ms ease-out,
+        margin-top 300ms ease-out;
+    overflow: hidden;
+}
+
+.new-group.is-collapsed .new-group-body {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-3px);
+    margin-top: 0;
+    pointer-events: none;
 }
 
 .new-group::before {

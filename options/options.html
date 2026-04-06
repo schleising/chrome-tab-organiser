@@ -25,37 +25,39 @@
     <div class="new-group-container">
       <div class="new-group-heading">
         <h2 id="group-form-title">Create New Group</h2>
-        <button type="button" id="toggle-new-group" class="options-button" aria-expanded="false" aria-controls="group-name">Show</button>
+        <button type="button" id="toggle-new-group" class="options-button" aria-expanded="false" aria-controls="new-group-body">Show</button>
       </div>
-      <label for="group-name">Group Name:</label>
-      <input type="text" id="group-name" name="group-name" class="group-input" placeholder="e.g. News" autofocus required>
-      <label for="group-urls">Group Hostname:</label>
-      <div class="host-input-row">
-        <input type="text" id="group-urls" name="group-urls" class="group-input" placeholder="example.com">
-        <button type="button" id="add-hostname" class="options-button btn-add">Add</button>
+      <div id="new-group-body" class="new-group-body">
+        <label for="group-name">Group Name:</label>
+        <input type="text" id="group-name" name="group-name" class="group-input" placeholder="e.g. News" autofocus required>
+        <label for="group-urls">Group Hostname:</label>
+        <div class="host-input-row">
+          <input type="text" id="group-urls" name="group-urls" class="group-input" placeholder="example.com">
+          <button type="button" id="add-hostname" class="options-button btn-add">Add</button>
+        </div>
+        <p class="field-hint">Use <strong>re:pattern</strong> for regex matching.</p>
+        <ul id="group-host-list" class="group-host-list"></ul>
+        <label for="group-colour">Group Colour:</label>
+        <select id="group-colour" name="group-colour" class="group-colour-select" required>
+          <button class="options-button">
+            <selectedcontent></selectedcontent>
+          </button>
+          <option value="blue"><span class="blue">●</span> Blue</option>
+          <option value="red"><span class="red">●</span> Red</option>
+          <option value="green"><span class="green">●</span> Green</option>
+          <option value="yellow"><span class="yellow">●</span> Yellow</option>
+          <option value="purple"><span class="purple">●</span> Purple</option>
+          <option value="orange"><span class="orange">●</span> Orange</option>
+          <option value="pink"><span class="pink">●</span> Pink</option>
+          <option value="grey"><span class="grey">●</span> Grey</option>
+          <option value="cyan"><span class="cyan">●</span> Cyan</option>
+        </select>
+        <div class="group-buttons">
+          <button type="submit" id="create-group" class="options-button btn-create">Create Group</button>
+          <button type="button" id="cancel-edit" class="options-button btn-cancel" hidden>Cancel Edit</button>
+        </div>
+        <p id="group-error" class="error-message" hidden></p>
       </div>
-      <p class="field-hint">Use <strong>re:pattern</strong> for regex matching.</p>
-      <ul id="group-host-list" class="group-host-list"></ul>
-      <label for="group-colour">Group Colour:</label>
-      <select id="group-colour" name="group-colour" class="group-colour-select" required>
-        <button class="options-button">
-          <selectedcontent></selectedcontent>
-        </button>
-        <option value="blue"><span class="blue">●</span> Blue</option>
-        <option value="red"><span class="red">●</span> Red</option>
-        <option value="green"><span class="green">●</span> Green</option>
-        <option value="yellow"><span class="yellow">●</span> Yellow</option>
-        <option value="purple"><span class="purple">●</span> Purple</option>
-        <option value="orange"><span class="orange">●</span> Orange</option>
-        <option value="pink"><span class="pink">●</span> Pink</option>
-        <option value="grey"><span class="grey">●</span> Grey</option>
-        <option value="cyan"><span class="cyan">●</span> Cyan</option>
-      </select>
-      <div class="group-buttons">
-        <button type="submit" id="create-group" class="options-button btn-create">Create Group</button>
-        <button type="button" id="cancel-edit" class="options-button btn-cancel" hidden>Cancel Edit</button>
-      </div>
-      <p id="group-error" class="error-message" hidden></p>
     </div>
   </div>
   <div class="existing-group-container" id="existing-group-container"></div>

@@ -69,6 +69,31 @@ function updateHostActionButtonStates() {
     }
 }
 
+function isGroupFormExpanded() {
+    const groupCard = byId('new-group-card');
+    return groupCard ? !groupCard.classList.contains('is-collapsed') : true;
+}
+
+function setGroupFormExpanded(expanded, { focusGroupName = false } = {}) {
+    const groupCard = byId('new-group-card');
+    const toggleButton = byId('toggle-new-group');
+    if (!groupCard) {
+        return;
+    }
+
+    groupCard.classList.toggle('is-collapsed', !expanded);
+
+    if (toggleButton) {
+        toggleButton.textContent = expanded ? 'Hide' : 'Show';
+        toggleButton.setAttribute('aria-expanded', String(expanded));
+    }
+
+    if (expanded && focusGroupName) {
+        const groupNameInput = byId('group-name');
+        groupNameInput?.focus({ preventScroll: true });
+    }
+}
+
 function suppressSyncGroupsRefresh() {
     suppressSyncGroupsRefreshUntil = Date.now() + SYNC_REFRESH_SUPPRESS_MS;
 }
@@ -548,6 +573,9 @@ function cancelCurrentGroupEdit() {
     }
 
     updateHostActionButtonStates();
+    if (!isCreateGroupFormDirty()) {
+        setGroupFormExpanded(false);
+    }
 }
 
 function setDataToolsStatus(message, isError = false) {
@@ -581,6 +609,8 @@ async function applyPendingTabDraftToForm() {
     if (!draft || typeof draft.url !== 'string') {
         return false;
     }
+
+    setGroupFormExpanded(true);
 
     const suggestedName = typeof draft.nameSuggestion === 'string' ? draft.nameSuggestion.trim() : '';
     byId('group-name').value = suggestedName;
@@ -972,6 +1002,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const exportGroupsButton = byId('export-groups');
     const importGroupsButton = byId('import-groups');
     const importGroupsFileInput = byId('import-groups-file');
+    const toggleNewGroupButton = byId('toggle-new-group');
 
     addHostnameButton.addEventListener('click', addHostnamesFromInput);
     cancelEditButton?.addEventListener('click', cancelCurrentGroupEdit);
@@ -984,27 +1015,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             addHostnamesFromInput();
         }
     });
+    toggleNewGroupButton?.addEventListener('click', () => {
+        setGroupFormExpanded(!isGroupFormExpanded(), { focusGroupName: true });
+    });
 
     renderPendingHostnames();
     setHostnameInputButtonMode(false);
     updateHostActionButtonStates();
+    setGroupFormExpanded(false);
     await initialiseOptionsDialog();
     const loadedPendingDraft = await applyPendingTabDraftToForm();
 
-    if (!loadedPendingDraft) {
-        const focusGroupName = () => {
-            const groupNameInput = byId('group-name');
-            if (!groupNameInput) {
-                return;
-            }
-
-            window.scrollTo(0, 0);
-            groupNameInput.focus({ preventScroll: true });
-        };
-
-        requestAnimationFrame(focusGroupName);
-        window.addEventListener('focus', focusGroupName, { once: true });
-    }
+    setGroupFormExpanded(loadedPendingDraft);
 
     exportGroupsButton?.addEventListener('click', exportGroupsToJson);
     importGroupsButton?.addEventListener('click', importGroupsFromPicker);
@@ -1326,6 +1348,8 @@ async function initialiseOptionsDialog() {
             if (groupFormTitle) {
                 groupFormTitle.textContent = `Editing ${group.name}`;
             }
+
+            setGroupFormExpanded(true, { focusGroupName: true });
 
             // Unhide the Cancel button
             const cancelButton = byId('cancel-edit');

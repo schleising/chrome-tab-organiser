@@ -21,9 +21,12 @@
     <p id="data-tools-status" class="field-hint data-tools-status" hidden></p>
     <input id="import-groups-file" type="file" accept="application/json,.json" hidden>
   </div>
-  <div class="new-group">
+  <div class="new-group" id="new-group-card">
     <div class="new-group-container">
-      <h2 id="group-form-title">Create New Group</h2>
+      <div class="new-group-heading">
+        <h2 id="group-form-title">Create New Group</h2>
+        <button type="button" id="toggle-new-group" class="options-button" aria-expanded="false" aria-controls="group-name">Show</button>
+      </div>
       <label for="group-name">Group Name:</label>
       <input type="text" id="group-name" name="group-name" class="group-input" placeholder="e.g. News" autofocus required>
       <label for="group-urls">Group Hostname:</label>

@@ -306,6 +306,11 @@ function resetCreateButtonState() {
     createGroupButton.textContent = CREATE_GROUP_LABEL;
     createGroupButton.classList.remove('btn-save');
     createGroupButton.classList.add('btn-create');
+
+    const groupFormTitle = byId('group-form-title');
+    if (groupFormTitle) {
+        groupFormTitle.textContent = 'Create New Group';
+    }
 }
 
 function clearGroupForm() {
@@ -1001,6 +1006,11 @@ async function initialiseOptionsDialog() {
             createGroupButton.textContent = `Update ${group.name}`;
             createGroupButton.classList.remove('btn-create');
             createGroupButton.classList.add('btn-save');
+
+            const groupFormTitle = byId('group-form-title');
+            if (groupFormTitle) {
+                groupFormTitle.textContent = `Editing ${group.name}`;
+            }
 
             // Unhide the Cancel button
             const cancelButton = byId('cancel-edit');

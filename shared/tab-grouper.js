@@ -32,33 +32,104 @@ function getCachedRegex(groupEntry) {
     return compiledRegex;
 }
 
+function parseUrlSafely(url) {
+    try {
+        return new URL(url);
+    } catch {
+        return null;
+    }
+}
+
+function hostnameMatches(urlHostname, hostPattern) {
+    return urlHostname === hostPattern || urlHostname.endsWith(`.${hostPattern}`);
+}
+
+function looksLikeHostnamePattern(entry) {
+    return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(entry);
+}
+
+function evaluateGroupEntryMatch(tabUrl, parsedTabUrl, groupEntryRaw) {
+    const groupEntry = groupEntryRaw.trim();
+    if (!groupEntry) {
+        return { isMatch: false, tier: 0, score: 0 };
+    }
+
+    // Advanced regex support: `re:pattern` or `/pattern/flags`.
+    if (groupEntry.startsWith('re:') || (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0)) {
+        const matcher = getCachedRegex(groupEntry);
+        if (!matcher) {
+            return { isMatch: false, tier: 0, score: 0 };
+        }
+
+        return matcher.test(tabUrl)
+            ? { isMatch: true, tier: 5, score: groupEntry.length }
+            : { isMatch: false, tier: 0, score: 0 };
+    }
+
+    const normalizedEntry = groupEntry.toLowerCase();
+    const normalizedUrl = tabUrl.toLowerCase();
+
+    if (parsedTabUrl) {
+        const urlHostname = parsedTabUrl.hostname.toLowerCase();
+        const urlPath = parsedTabUrl.pathname.toLowerCase();
+
+        // Host + path rule, e.g. "bbc.co.uk/sport".
+        const slashIndex = normalizedEntry.indexOf('/');
+        if (slashIndex > 0) {
+            const hostPart = normalizedEntry.slice(0, slashIndex).trim();
+            const pathPart = `/${normalizedEntry.slice(slashIndex + 1).replace(/^\/+/, '')}`;
+            if (hostPart && pathPart !== '/' && hostnameMatches(urlHostname, hostPart) && urlPath.startsWith(pathPart)) {
+                return { isMatch: true, tier: 4, score: hostPart.length + pathPart.length };
+            }
+        }
+
+        // Host-only rule, e.g. "theguardian.com".
+        if (looksLikeHostnamePattern(normalizedEntry) && hostnameMatches(urlHostname, normalizedEntry)) {
+            return { isMatch: true, tier: 3, score: normalizedEntry.length };
+        }
+
+        // Path token rule, e.g. "sport" (prefer path semantics over generic substring).
+        if (urlPath.includes(normalizedEntry)) {
+            return { isMatch: true, tier: 2, score: normalizedEntry.length };
+        }
+    }
+
+    // Generic fallback for backward compatibility.
+    if (normalizedUrl.includes(normalizedEntry)) {
+        return { isMatch: true, tier: 1, score: normalizedEntry.length };
+    }
+
+    return { isMatch: false, tier: 0, score: 0 };
+}
+
 function getMatchBucketIndex(groupUrls, tabUrl) {
     if (!tabUrl) {
         return Number.MAX_SAFE_INTEGER;
     }
 
-    const normalizedUrl = tabUrl.toLowerCase();
+    const parsedTabUrl = parseUrlSafely(tabUrl);
+    let bestBucketIndex = Number.MAX_SAFE_INTEGER;
+    let bestTier = 0;
+    let bestScore = 0;
 
     for (let i = 0; i < groupUrls.length; i += 1) {
-        const groupEntry = groupUrls[i].trim();
-        if (!groupEntry) {
+        const evaluation = evaluateGroupEntryMatch(tabUrl, parsedTabUrl, groupUrls[i]);
+        if (!evaluation.isMatch) {
             continue;
         }
 
-        if (groupEntry.startsWith('re:') || (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0)) {
-            const matcher = getCachedRegex(groupEntry);
-            if (matcher?.test(tabUrl)) {
-                return i;
-            }
-            continue;
-        }
-
-        if (normalizedUrl.includes(groupEntry.toLowerCase())) {
-            return i;
+        if (
+            evaluation.tier > bestTier
+            || (evaluation.tier === bestTier && evaluation.score > bestScore)
+            || (evaluation.tier === bestTier && evaluation.score === bestScore && i < bestBucketIndex)
+        ) {
+            bestTier = evaluation.tier;
+            bestScore = evaluation.score;
+            bestBucketIndex = i;
         }
     }
 
-    return Number.MAX_SAFE_INTEGER;
+    return bestBucketIndex;
 }
 
 async function arrangeTabsWithinGroup(windowId, groupId, groupUrls, groupStartIndex) {
@@ -511,34 +582,26 @@ function calculateBestGroupMatch(storedGroups, url) {
         return null;
     }
 
+    const parsedTabUrl = parseUrlSafely(url);
     let bestMatch = null;
-    let bestMatchCount = 0;
-    const normalizedUrl = url.toLowerCase();
+    let bestMatchTier = 0;
+    let bestMatchScore = 0;
 
     // Iterate through each stored group
     for (const group of storedGroups) {
         for (const groupUrl of group.urls) {
-            const groupEntry = groupUrl.trim();
-            let isMatch = false;
-
-            // Advanced regex support: `re:pattern` or `/pattern/flags`.
-            if (groupEntry.startsWith('re:') || (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0)) {
-                const matcher = getCachedRegex(groupEntry);
-                if (matcher) {
-                    isMatch = matcher.test(url);
-                } else {
-                    console.warn(`Invalid regex entry in group ${group.name}: ${groupEntry}`);
-                }
-            } else {
-                isMatch = normalizedUrl.includes(groupEntry.toLowerCase());
+            const evaluation = evaluateGroupEntryMatch(url, parsedTabUrl, groupUrl);
+            if (!evaluation.isMatch) {
+                continue;
             }
 
-            if (isMatch) {
-                const matchCount = groupEntry.length;
-                if (matchCount > bestMatchCount) {
-                    bestMatchCount = matchCount;
-                    bestMatch = group;
-                }
+            if (
+                evaluation.tier > bestMatchTier
+                || (evaluation.tier === bestMatchTier && evaluation.score > bestMatchScore)
+            ) {
+                bestMatchTier = evaluation.tier;
+                bestMatchScore = evaluation.score;
+                bestMatch = group;
             }
         }
     }

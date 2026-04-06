@@ -223,11 +223,20 @@ label {
     border-radius: 999px;
     padding: 0.2rem 0.35rem 0.2rem 0.6rem;
     font-size: 0.92rem;
+    cursor: grab;
+}
+
+.group-host-item:active {
+    cursor: grabbing;
 }
 
 .group-host-item.is-editing {
     border-color: var(--color-accent-strong);
     box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.group-host-item.is-dragging {
+    opacity: 0.6;
 }
 
 .regex-hostname {

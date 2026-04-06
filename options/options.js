@@ -12,12 +12,15 @@ const DATA_TOOLS_STATUS_TIMEOUT_MS = 3000;
 const PENDING_GROUP_DRAFT_KEY = 'pending_tab_group_draft';
 const REORDER_ANIMATION_DURATION_MS = 480;
 const REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const CHIP_REORDER_ANIMATION_DURATION_MS = 220;
+const CHIP_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 const byId = (id) => document.querySelector(`#${id}`);
 
 /** @type {string[]} */
 let pendingGroupUrls = [];
 let editingHostnameIndex = null;
+let draggingHostnameIndex = null;
 
 let dataToolsStatusTimeoutId = null;
 
@@ -60,9 +63,77 @@ function renderPendingHostnames() {
     pendingGroupUrls.forEach((hostname, index) => {
         const item = document.createElement('li');
         item.className = 'group-host-item';
+        item.draggable = true;
+        item.dataset.hostIndex = String(index);
+        item.dataset.hostValue = hostname;
         if (editingHostnameIndex === index) {
             item.classList.add('is-editing');
         }
+
+        item.addEventListener('dragstart', (event) => {
+            draggingHostnameIndex = index;
+            item.classList.add('is-dragging');
+            if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(index));
+            }
+        });
+
+        item.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'move';
+            }
+
+            const draggingChip = hostList.querySelector('.group-host-item.is-dragging');
+            if (!draggingChip || draggingChip === item) {
+                return;
+            }
+
+            const targetRect = item.getBoundingClientRect();
+            const pointerRatioY = (event.clientY - targetRect.top) / Math.max(targetRect.height, 1);
+            const pointerRatioX = (event.clientX - targetRect.left) / Math.max(targetRect.width, 1);
+            const isNearVerticalMidline = Math.abs(event.clientY - (targetRect.top + targetRect.height / 2)) <= 8;
+
+            // Use wider trigger bands so users don't need pinpoint midline dragging.
+            const insertBefore = isNearVerticalMidline
+                ? pointerRatioX < 0.55
+                : pointerRatioY < 0.72;
+            const referenceNode = insertBefore ? item : item.nextElementSibling;
+
+            if (referenceNode === draggingChip) {
+                return;
+            }
+
+            animateChipReflow(hostList, () => {
+                hostList.insertBefore(draggingChip, referenceNode);
+            });
+        });
+
+        item.addEventListener('dragend', () => {
+            const editingHostnameValue = editingHostnameIndex !== null
+                ? pendingGroupUrls[editingHostnameIndex]
+                : null;
+
+            const domOrder = Array.from(hostList.querySelectorAll('.group-host-item'))
+                .map((chip) => chip.dataset.hostValue)
+                .filter((value) => typeof value === 'string');
+
+            if (domOrder.length === pendingGroupUrls.length) {
+                pendingGroupUrls = domOrder;
+                if (editingHostnameValue !== null) {
+                    editingHostnameIndex = pendingGroupUrls.indexOf(editingHostnameValue);
+                    if (editingHostnameIndex === -1) {
+                        editingHostnameIndex = null;
+                        setHostnameInputButtonMode(false);
+                    }
+                }
+            }
+
+            draggingHostnameIndex = null;
+            void persistChipOrderForEditedGroup();
+            renderPendingHostnames();
+        });
 
         const hostText = document.createElement('span');
         hostText.textContent = hostname;
@@ -110,6 +181,48 @@ function renderPendingHostnames() {
         item.appendChild(removeButton);
         hostList.appendChild(item);
     });
+}
+
+function animateChipReflow(container, mutateLayout) {
+    const chipsBefore = Array.from(container.querySelectorAll('.group-host-item'));
+    const beforeRects = new Map(chipsBefore.map((chip) => [chip, chip.getBoundingClientRect()]));
+
+    mutateLayout();
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        return;
+    }
+
+    const chipsAfter = Array.from(container.querySelectorAll('.group-host-item'));
+    for (const chip of chipsAfter) {
+        if (chip.classList.contains('is-dragging')) {
+            continue;
+        }
+
+        const before = beforeRects.get(chip);
+        if (!before) {
+            continue;
+        }
+
+        const after = chip.getBoundingClientRect();
+        const deltaX = before.left - after.left;
+        const deltaY = before.top - after.top;
+
+        if (deltaX !== 0 || deltaY !== 0) {
+            chip.animate(
+                [
+                    { transform: `translate(${deltaX}px, ${deltaY}px)` },
+                    { transform: 'translate(0, 0)' }
+                ],
+                {
+                    duration: CHIP_REORDER_ANIMATION_DURATION_MS,
+                    easing: CHIP_REORDER_ANIMATION_EASING,
+                    fill: 'both'
+                }
+            );
+        }
+    }
 }
 
 function setHostnameInputButtonMode(isUpdate) {
@@ -201,8 +314,46 @@ function clearGroupForm() {
     byId('group-urls').value = '';
     pendingGroupUrls = [];
     editingHostnameIndex = null;
+    draggingHostnameIndex = null;
     setHostnameInputButtonMode(false);
     renderPendingHostnames();
+}
+
+function getEditingGroupName() {
+    const createGroupButton = byId('create-group');
+    if (!createGroupButton?.textContent?.startsWith('Update ')) {
+        return null;
+    }
+
+    const groupName = createGroupButton.textContent.replace('Update ', '').trim();
+    return groupName || null;
+}
+
+async function persistChipOrderForEditedGroup() {
+    const editingGroupName = getEditingGroupName();
+    if (!editingGroupName) {
+        return;
+    }
+
+    const storedGroups = await getStoredGroups();
+    const groupIndex = storedGroups.findIndex((group) => group.name === editingGroupName);
+    if (groupIndex === -1) {
+        return;
+    }
+
+    const existingOrder = storedGroups[groupIndex].urls;
+    const hasChanged = existingOrder.length !== pendingGroupUrls.length
+        || existingOrder.some((url, index) => url !== pendingGroupUrls[index]);
+
+    if (!hasChanged) {
+        return;
+    }
+
+    storedGroups[groupIndex].urls = [...pendingGroupUrls];
+    await storeGroups(storedGroups);
+
+    // Reorder tabs once after chip drag finishes; no live tab reorder during drag.
+    await organiseAllTabs({ arrangeOnly: true });
 }
 
 function cancelCurrentGroupEdit() {

@@ -14,6 +14,8 @@ const REORDER_ANIMATION_DURATION_MS = 480;
 const REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const CHIP_REORDER_ANIMATION_DURATION_MS = 220;
 const CHIP_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const GROUP_CARD_REORDER_ANIMATION_DURATION_MS = 260;
+const GROUP_CARD_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 const byId = (id) => document.querySelector(`#${id}`);
 
@@ -21,6 +23,7 @@ const byId = (id) => document.querySelector(`#${id}`);
 let pendingGroupUrls = [];
 let editingHostnameIndex = null;
 let draggingHostnameIndex = null;
+let draggingGroupName = null;
 
 let dataToolsStatusTimeoutId = null;
 
@@ -223,6 +226,75 @@ function animateChipReflow(container, mutateLayout) {
             );
         }
     }
+}
+
+function animateGroupCardReflow(container, mutateLayout) {
+    const cardsBefore = Array.from(container.querySelectorAll('.existing-group'));
+    const beforeRects = new Map(cardsBefore.map((card) => [card, card.getBoundingClientRect()]));
+
+    mutateLayout();
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        return;
+    }
+
+    const cardsAfter = Array.from(container.querySelectorAll('.existing-group'));
+    for (const card of cardsAfter) {
+        if (card.classList.contains('is-dragging')) {
+            continue;
+        }
+
+        const before = beforeRects.get(card);
+        if (!before) {
+            continue;
+        }
+
+        const after = card.getBoundingClientRect();
+        const deltaY = before.top - after.top;
+        if (deltaY !== 0) {
+            card.animate(
+                [
+                    { transform: `translateY(${deltaY}px)` },
+                    { transform: 'translateY(0)' }
+                ],
+                {
+                    duration: GROUP_CARD_REORDER_ANIMATION_DURATION_MS,
+                    easing: GROUP_CARD_REORDER_ANIMATION_EASING,
+                    fill: 'both'
+                }
+            );
+        }
+    }
+}
+
+async function persistDraggedGroupOrder(optionsContainer) {
+    const orderedGroupNames = Array.from(optionsContainer.querySelectorAll('.existing-group'))
+        .map((card) => card.dataset.groupName)
+        .filter((name) => typeof name === 'string');
+
+    if (orderedGroupNames.length === 0) {
+        return;
+    }
+
+    let storedGroups = await getStoredGroups();
+    const byName = new Map(storedGroups.map((group) => [group.name, group]));
+    const reorderedGroups = orderedGroupNames
+        .map((name) => byName.get(name))
+        .filter((group) => Boolean(group));
+
+    if (reorderedGroups.length !== storedGroups.length) {
+        return;
+    }
+
+    const hasChanged = reorderedGroups.some((group, index) => group.name !== storedGroups[index].name);
+    if (!hasChanged) {
+        return;
+    }
+
+    storedGroups = reorderedGroups;
+    await storeGroups(storedGroups);
+    await organiseAllTabs({ arrangeOnly: true });
 }
 
 function setHostnameInputButtonMode(isUpdate) {
@@ -900,6 +972,52 @@ async function initialiseOptionsDialog() {
         const groupElement = document.createElement('div');
         groupElement.className = `existing-group ${group.colour}`;
         groupElement.dataset.groupName = group.name;
+        groupElement.draggable = true;
+
+        groupElement.addEventListener('dragstart', (event) => {
+            draggingGroupName = group.name;
+            groupElement.classList.add('is-dragging');
+            if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', group.name);
+            }
+        });
+
+        groupElement.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            if (!draggingGroupName) {
+                return;
+            }
+
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'move';
+            }
+
+            const draggingCard = optionsContainer.querySelector('.existing-group.is-dragging');
+            if (!draggingCard || draggingCard === groupElement) {
+                return;
+            }
+
+            const targetRect = groupElement.getBoundingClientRect();
+            const pointerRatio = (event.clientY - targetRect.top) / Math.max(targetRect.height, 1);
+            const insertBefore = pointerRatio < 0.62;
+            const referenceNode = insertBefore ? groupElement : groupElement.nextElementSibling;
+
+            if (referenceNode === draggingCard) {
+                return;
+            }
+
+            animateGroupCardReflow(optionsContainer, () => {
+                optionsContainer.insertBefore(draggingCard, referenceNode);
+            });
+        });
+
+        groupElement.addEventListener('dragend', () => {
+            draggingGroupName = null;
+            groupElement.classList.remove('is-dragging');
+            void persistDraggedGroupOrder(optionsContainer);
+            void initialiseOptionsDialog();
+        });
 
         // Create the header for the group
         const groupHeaderElement = document.createElement('div');

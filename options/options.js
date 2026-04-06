@@ -116,6 +116,15 @@ function addHostnamesFromInput() {
     return true;
 }
 
+function scrollGroupCardIntoView(groupName) {
+    const groupCards = document.querySelectorAll('.existing-group');
+    const targetCard = Array.from(groupCards).find(card => card.dataset.groupName === groupName);
+
+    if (targetCard) {
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     const addHostnameButton = document.getElementById('add-hostname');
     const hostInput = document.getElementById('group-urls');
@@ -273,6 +282,7 @@ async function initialiseOptionsDialog() {
         // Create a new element for the group
         const groupElement = document.createElement('div');
         groupElement.className = `existing-group ${group.colour}`;
+        groupElement.dataset.groupName = group.name;
 
         // Create the header for the group
         const groupHeaderElement = document.createElement('div');
@@ -441,6 +451,7 @@ async function initialiseOptionsDialog() {
 
                 // Refresh the options UI
                 await initialiseOptionsDialog();
+                scrollGroupCardIntoView(group.name);
 
                 // Reorganise all tabs in the current window
                 await organiseAllTabs();
@@ -476,6 +487,7 @@ async function initialiseOptionsDialog() {
 
                 // Refresh the options UI
                 await initialiseOptionsDialog();
+                scrollGroupCardIntoView(group.name);
 
                 // Reorganise all tabs in the current window
                 await organiseAllTabs();

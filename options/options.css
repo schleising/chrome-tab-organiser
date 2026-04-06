@@ -207,6 +207,10 @@ label {
     gap: 0.45rem;
 }
 
+.group-host-list-readonly {
+    margin: 0.5rem 0.75rem;
+}
+
 .field-hint {
     margin: -0.1rem 0 0;
     color: var(--color-text-hint);
@@ -226,8 +230,17 @@ label {
     cursor: grab;
 }
 
+.group-host-item-readonly {
+    cursor: inherit;
+    padding-right: 0.6rem;
+}
+
 .group-host-item:active {
     cursor: grabbing;
+}
+
+.group-host-item-readonly:active {
+    cursor: inherit;
 }
 
 .group-host-item.is-editing {

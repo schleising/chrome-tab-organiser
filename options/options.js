@@ -1048,11 +1048,20 @@ async function initialiseOptionsDialog() {
         // Append the header to the group element
         groupElement.appendChild(groupHeaderElement);
 
-        // Create a list of URLs for the group
+        // Create a read-only chip list of URLs for the group.
         const groupUrlsElement = document.createElement('ul');
-        group.urls.forEach(url => {
+        groupUrlsElement.className = 'group-host-list group-host-list-readonly';
+        group.urls.forEach((url) => {
             const urlElement = document.createElement('li');
-            urlElement.textContent = url;
+            urlElement.className = 'group-host-item group-host-item-readonly';
+
+            const urlText = document.createElement('span');
+            urlText.textContent = url;
+            if (isRegexEntry(url)) {
+                urlText.classList.add('regex-hostname');
+            }
+
+            urlElement.appendChild(urlText);
             groupUrlsElement.appendChild(urlElement);
         });
         groupElement.appendChild(groupUrlsElement);

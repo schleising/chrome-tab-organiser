@@ -4,6 +4,12 @@
 
 import { storeGroups, getStoredGroups, organiseTab, deleteGroup, arrangeTabGroups } from '../shared/tab-grouper.js';
 
+const ERROR_TIMEOUT_MS = 5000;
+const DEFAULT_GROUP_COLOUR = 'blue';
+const CREATE_GROUP_LABEL = 'Create Group';
+
+const byId = (id) => document.querySelector(`#${id}`);
+
 /** @type {string[]} */
 let pendingGroupUrls = [];
 
@@ -60,7 +66,7 @@ function normaliseHostnames(rawValue) {
 }
 
 function renderPendingHostnames() {
-    const hostList = document.getElementById('group-host-list');
+    const hostList = byId('group-host-list');
     hostList.innerHTML = '';
 
     pendingGroupUrls.forEach((hostname, index) => {
@@ -90,8 +96,8 @@ function renderPendingHostnames() {
 }
 
 function addHostnamesFromInput() {
-    const hostInput = document.getElementById('group-urls');
-    const groupError = document.getElementById('group-error');
+    const hostInput = byId('group-urls');
+    const groupError = byId('group-error');
     const parsedHostnames = normaliseHostnames(hostInput.value);
 
     for (const hostname of parsedHostnames) {
@@ -116,6 +122,38 @@ function addHostnamesFromInput() {
     return true;
 }
 
+function showGroupError(message) {
+    const groupError = byId('group-error');
+    groupError.textContent = message;
+    groupError.hidden = false;
+
+    setTimeout(() => {
+        groupError.textContent = '';
+        groupError.hidden = true;
+    }, ERROR_TIMEOUT_MS);
+}
+
+function clearGroupError() {
+    const groupError = byId('group-error');
+    groupError.textContent = '';
+    groupError.hidden = true;
+}
+
+function resetCreateButtonState() {
+    const createGroupButton = byId('create-group');
+    createGroupButton.textContent = CREATE_GROUP_LABEL;
+    createGroupButton.classList.remove('btn-save');
+    createGroupButton.classList.add('btn-create');
+}
+
+function clearGroupForm() {
+    byId('group-name').value = '';
+    byId('group-colour').value = DEFAULT_GROUP_COLOUR;
+    byId('group-urls').value = '';
+    pendingGroupUrls = [];
+    renderPendingHostnames();
+}
+
 function scrollGroupCardIntoView(groupName) {
     const groupCards = document.querySelectorAll('.existing-group');
     const targetCard = Array.from(groupCards).find(card => card.dataset.groupName === groupName);
@@ -126,8 +164,8 @@ function scrollGroupCardIntoView(groupName) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const addHostnameButton = document.getElementById('add-hostname');
-    const hostInput = document.getElementById('group-urls');
+    const addHostnameButton = byId('add-hostname');
+    const hostInput = byId('group-urls');
 
     addHostnameButton.addEventListener('click', addHostnamesFromInput);
     hostInput.addEventListener('keydown', (event) => {
@@ -141,30 +179,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initialiseOptionsDialog();
 
     // Add event listener for the "Create Group" button
-    const createGroupButton = document.getElementById('create-group');
+    const createGroupButton = byId('create-group');
     createGroupButton.addEventListener('click', async () => {
-        // Clear any previous error messages
-        document.getElementById('group-error').textContent = "";
-        document.getElementById('group-error').hidden = true;
+        clearGroupError();
 
         // Get the group name and colour from the input fields
-        const groupName = document.getElementById('group-name').value.trim();
-        const groupColour = document.getElementById('group-colour').value.trim();
+        const groupName = byId('group-name').value.trim();
+        const groupColour = byId('group-colour').value.trim();
         if (!addHostnamesFromInput()) {
             return;
         }
 
         // Validate inputs
         if (!groupName || !groupColour || pendingGroupUrls.length === 0) {
-            // Show error message if inputs are invalid
-            document.getElementById('group-error').textContent = "Invalid input: group name, colour, and URLs are required.";
-            document.getElementById('group-error').hidden = false;
-
-            // Clear the error message after 5 seconds
-            setTimeout(() => {
-                document.getElementById('group-error').textContent = "";
-                document.getElementById('group-error').hidden = true;
-            }, 5000);
+            showGroupError("Invalid input: group name, colour, and URLs are required.");
             return;
         }
 
@@ -189,15 +217,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Check if the new group name already exists
                 const existingGroupIndex = storedGroups.findIndex(g => g.name === newGroup.name);
                 if (existingGroupIndex !== -1) {
-                    // If a group with the new name already exists, show an error message
-                    document.getElementById('group-error').textContent = "A group with this name already exists, edit that one instead.";
-                    document.getElementById('group-error').hidden = false;
-
-                    // Clear the error message after 5 seconds
-                    setTimeout(() => {
-                        document.getElementById('group-error').textContent = "";
-                        document.getElementById('group-error').hidden = true;
-                    }, 5000);
+                    showGroupError("A group with this name already exists, edit that one instead.");
                     return;
                 } else {
                     // If the group name has changed, replace the old group with the new one
@@ -222,11 +242,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             // Reset the button text to "Create Group"
-            createGroupButton.textContent = 'Create Group';
-            createGroupButton.classList.remove('btn-save');
-            createGroupButton.classList.add('btn-create');
+            resetCreateButtonState();
             // Hide the Cancel button
-            const cancelButton = document.getElementById('cancel-edit');
+            const cancelButton = byId('cancel-edit');
             cancelButton.hidden = true;
             cancelButton.onclick = null;
         } else {
@@ -234,15 +252,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Check if a group with the same name already exists
             const existingGroupIndex = storedGroups.findIndex(g => g.name === newGroup.name);
             if (existingGroupIndex !== -1) {
-                // If a group with the same name exists, show an error message
-                document.getElementById('group-error').textContent = "A group with this name already exists, edit it instead.";
-                document.getElementById('group-error').hidden = false;
-
-                // Clear the error message after 5 seconds
-                setTimeout(() => {
-                    document.getElementById('group-error').textContent = "";
-                    document.getElementById('group-error').hidden = true;
-                }, 5000);
+                showGroupError("A group with this name already exists, edit it instead.");
                 return;
             } else {
                 // If the group does not exist, add the new group to the stored groups
@@ -259,12 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Refresh the options UI to show the new group
         await initialiseOptionsDialog();
 
-        // Clear input fields
-        document.getElementById('group-name').value = '';
-        document.getElementById('group-colour').value = 'blue';
-        document.getElementById('group-urls').value = '';
-        pendingGroupUrls = [];
-        renderPendingHostnames();
+        clearGroupForm();
     });
 });
 
@@ -274,11 +279,11 @@ async function initialiseOptionsDialog() {
     let storedGroups = await getStoredGroups();
 
     // Populate the options UI with the stored groups
-    const optionsContainer = document.getElementById('existing-group-container');
+    const optionsContainer = byId('existing-group-container');
     optionsContainer.innerHTML = ''; // Clear existing content before re-render
 
     // Build the UI for each stored group
-    storedGroups.forEach(group => {
+    storedGroups.forEach((group, groupPosition) => {
         // Create a new element for the group
         const groupElement = document.createElement('div');
         groupElement.className = `existing-group ${group.colour}`;
@@ -337,8 +342,8 @@ async function initialiseOptionsDialog() {
         // Add an event listener to the delete button
         deleteButton.addEventListener('click', async () => {
             // Create a confirmation dialog
-            const dialog = document.getElementById('confirm-dialog');
-            const message = document.getElementById('confirm-message');
+            const dialog = byId('confirm-dialog');
+            const message = byId('confirm-message');
             message.textContent = `Are you sure you want to delete the group "${group.name}"?`;
             dialog.showModal();
 
@@ -376,35 +381,29 @@ async function initialiseOptionsDialog() {
         // Add an event listener to the edit button
         editButton.addEventListener('click', () => {
             // Populate the input fields with the group's data for editing
-            document.getElementById('group-name').value = group.name;
-            document.getElementById('group-colour').value = group.colour;
-            document.getElementById('group-urls').value = '';
+            byId('group-name').value = group.name;
+            byId('group-colour').value = group.colour;
+            byId('group-urls').value = '';
             pendingGroupUrls = [...group.urls];
             renderPendingHostnames();
 
             // Set the button text to "Update <Group Name>"
-            const createGroupButton = document.getElementById('create-group');
+            const createGroupButton = byId('create-group');
             createGroupButton.textContent = `Update ${group.name}`;
             createGroupButton.classList.remove('btn-create');
             createGroupButton.classList.add('btn-save');
 
             // Unhide the Cancel button
-            const cancelButton = document.getElementById('cancel-edit');
+            const cancelButton = byId('cancel-edit');
             cancelButton.hidden = false;
 
             // Use a single click handler so repeated edits do not stack listeners.
             cancelButton.onclick = function cancelEditHandler() {
                 // Clear the input fields
-                document.getElementById('group-name').value = '';
-                document.getElementById('group-colour').value = 'blue';
-                document.getElementById('group-urls').value = '';
-                pendingGroupUrls = [];
-                renderPendingHostnames();
+                clearGroupForm();
 
                 // Reset the button text to "Create Group"
-                createGroupButton.textContent = 'Create Group';
-                createGroupButton.classList.remove('btn-save');
-                createGroupButton.classList.add('btn-create');
+                resetCreateButtonState();
 
                 // Hide the Cancel button
                 cancelButton.hidden = true;
@@ -432,7 +431,7 @@ async function initialiseOptionsDialog() {
         upButton.setAttribute('aria-label', 'Move group up');
 
         // Disable the up button if this is the first group
-        if (storedGroups.indexOf(group) === 0) {
+        if (groupPosition === 0) {
             upButton.disabled = true;
         }
 
@@ -468,7 +467,7 @@ async function initialiseOptionsDialog() {
         downButton.setAttribute('aria-label', 'Move group down');
 
         // Disable the down button if this is the last group
-        if (storedGroups.indexOf(group) === storedGroups.length - 1) {
+        if (groupPosition === storedGroups.length - 1) {
             downButton.disabled = true;
         }
 
@@ -532,8 +531,8 @@ async function organiseAllTabs() {
         }
 
         // Skip if the window type is not normal
-        const window = await chrome.windows.get(tab.windowId);
-        if (window.type !== 'normal') {
+        const windowInfo = await chrome.windows.get(tab.windowId);
+        if (windowInfo.type !== 'normal') {
             continue;
         }
 
@@ -546,6 +545,6 @@ async function organiseAllTabs() {
 }
 
 // Add an event listener for the "Organise All Tabs" button
-document.getElementById('organise-all-tabs').addEventListener('click', async () => {
+byId('organise-all-tabs').addEventListener('click', async () => {
     await organiseAllTabs();
 });

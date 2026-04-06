@@ -41,7 +41,7 @@ export async function storeGroups(groups) {
     // Validate the input to ensure it is an array of StoredGroup objects
     if (!Array.isArray(groups) || !groups.every(group => group && typeof group.name === 'string' && Array.isArray(group.urls) && group.urls.every(url => typeof url === 'string') && typeof group.colour === 'string')) {
         console.error("Invalid groups format. Expected an array of StoredGroup objects.");
-        return
+        return;
     }
 
     // Save the groups to chrome storage
@@ -60,34 +60,22 @@ export async function storeGroups(groups) {
  * @returns {Promise<StoredGroup[]>} - A promise that resolves to an array of stored groups
  */
 export async function getStoredGroups() {
-    // Load options from storage
-    let result;
     try {
         // Attempt to get the stored groups from chrome storage
-        result = await chrome.storage.sync.get('tab_groups');
+        const result = await chrome.storage.sync.get('tab_groups');
+        return Array.isArray(result.tab_groups) ? result.tab_groups : [];
     } catch (error) {
         // If there is an error accessing storage, log it and return an empty array
         console.error("Error accessing storage:", error);
         return [];
     }
-
-    /** @type {StoredGroup[]} */
-    let tab_groups = Array.isArray(result.tab_groups) ? result.tab_groups : [];
-
-    // If no groups are stored, initialise with an empty array
-    if (!tab_groups) {
-        tab_groups = [];
-    }
-
-    // Return the stored groups
-    return tab_groups;
 }
 
 // Add a listener for tab updates
 export async function organiseTab(updatedTabId, updatedTab) {
     // Get the stored groups from local storage
     /** @type {StoredGroup[]} */
-    let storedGroups = await getStoredGroups();
+    const storedGroups = await getStoredGroups();
 
     // Return if no groups are stored
     if (storedGroups.length === 0) {
@@ -258,16 +246,12 @@ export async function organiseTab(updatedTabId, updatedTab) {
 }
 
 // Function to calculate the start and end indices for each tab group and move them to make them contiguous
-export async function arrangeTabGroups(windowId) {
-    // If no window ID is provided, use the current window
-    if (!windowId) {
-        windowId = chrome.windows.WINDOW_ID_CURRENT;
-    }
+export async function arrangeTabGroups(windowId = chrome.windows.WINDOW_ID_CURRENT) {
 
     // Get all tab groups
     let tabGroups;
     try {
-        tabGroups = await chrome.tabGroups.query({ windowId: windowId });
+        tabGroups = await chrome.tabGroups.query({ windowId });
     } catch (error) {
         console.error("Error querying tab groups:", error);
         return;
@@ -282,7 +266,7 @@ export async function arrangeTabGroups(windowId) {
         try {
             const tabsInGroup = await chrome.tabs.query({
                 groupId: group.id,
-                windowId: windowId
+                windowId
             });
 
             // If there are no tabs in the group, continue to the next group
@@ -304,7 +288,7 @@ export async function arrangeTabGroups(windowId) {
 
     // Sort the group IDs based on the order of the stored groups
     /** @type {StoredGroup[]} */
-    let storedGroups = await getStoredGroups();
+    const storedGroups = await getStoredGroups();
 
     const sortedGroupIds = storedGroups
         .map(group => group.name)
@@ -317,7 +301,7 @@ export async function arrangeTabGroups(windowId) {
     try {
         pinnedTabs = await chrome.tabs.query({
             pinned: true,
-            windowId: windowId
+            windowId
         });
     } catch (error) {
         console.error("Error querying pinned tabs:", error);

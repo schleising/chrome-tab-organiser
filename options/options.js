@@ -356,15 +356,6 @@ async function importGroupsFromPicker() {
     }
 }
 
-function scrollGroupCardIntoView(groupName) {
-    const groupCards = document.querySelectorAll('.existing-group');
-    const targetCard = Array.from(groupCards).find(card => card.dataset.groupName === groupName);
-
-    if (targetCard) {
-        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-}
-
 function ensureCardStaysVisible(card) {
     if (!card) {
         return;

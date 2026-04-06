@@ -12,7 +12,6 @@
     /* Text */
     --color-text-primary: #0f172a;
     --color-text-strong: #111;
-    --color-text-muted: #4b5563;
     --color-text-hint: #475569;
 
     /* Borders and focus */
@@ -35,9 +34,6 @@
     /* Buttons */
     --color-button-primary-bg: #2f80d8;
     --color-button-primary-shadow: rgba(47, 128, 216, 0.25);
-    --color-button-header-start: #11b6b5;
-    --color-button-header-end: #0aa7a7;
-    --color-button-header-shadow: rgba(10, 167, 167, 0.35);
     --color-button-neutral-bg: #f2f4f7;
     --color-button-neutral-text: #111827;
     --color-button-neutral-border: #cfd6df;

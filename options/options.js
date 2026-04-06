@@ -1168,6 +1168,50 @@ async function initialiseOptionsDialog() {
     const optionsContainer = byId('existing-group-container');
     optionsContainer.innerHTML = ''; // Clear existing content before re-render
 
+    let dragAutoScrollRafId = null;
+    let dragPointerY = null;
+
+    const stopDragAutoScroll = () => {
+        dragPointerY = null;
+        if (dragAutoScrollRafId !== null) {
+            cancelAnimationFrame(dragAutoScrollRafId);
+            dragAutoScrollRafId = null;
+        }
+    };
+
+    const runDragAutoScroll = () => {
+        if (!draggingGroupName || dragPointerY === null) {
+            dragAutoScrollRafId = null;
+            return;
+        }
+
+        const rect = optionsContainer.getBoundingClientRect();
+        const EDGE_ZONE_PX = 52;
+        const MAX_SCROLL_STEP_PX = 18;
+        let scrollDelta = 0;
+
+        if (dragPointerY < rect.top + EDGE_ZONE_PX) {
+            const ratio = (rect.top + EDGE_ZONE_PX - dragPointerY) / EDGE_ZONE_PX;
+            scrollDelta = -Math.ceil(Math.min(1, ratio) * MAX_SCROLL_STEP_PX);
+        } else if (dragPointerY > rect.bottom - EDGE_ZONE_PX) {
+            const ratio = (dragPointerY - (rect.bottom - EDGE_ZONE_PX)) / EDGE_ZONE_PX;
+            scrollDelta = Math.ceil(Math.min(1, ratio) * MAX_SCROLL_STEP_PX);
+        }
+
+        if (scrollDelta !== 0) {
+            optionsContainer.scrollTop += scrollDelta;
+        }
+
+        dragAutoScrollRafId = requestAnimationFrame(runDragAutoScroll);
+    };
+
+    const updateDragAutoScroll = (pointerY) => {
+        dragPointerY = pointerY;
+        if (dragAutoScrollRafId === null) {
+            dragAutoScrollRafId = requestAnimationFrame(runDragAutoScroll);
+        }
+    };
+
     // Build the UI for each stored group
     storedGroups.forEach((group, groupPosition) => {
         // Create a new element for the group
@@ -1188,8 +1232,11 @@ async function initialiseOptionsDialog() {
         groupElement.addEventListener('dragover', (event) => {
             event.preventDefault();
             if (!draggingGroupName) {
+                stopDragAutoScroll();
                 return;
             }
+
+            updateDragAutoScroll(event.clientY);
 
             if (event.dataTransfer) {
                 event.dataTransfer.dropEffect = 'move';
@@ -1216,6 +1263,7 @@ async function initialiseOptionsDialog() {
 
         groupElement.addEventListener('dragend', () => {
             draggingGroupName = null;
+            stopDragAutoScroll();
             groupElement.classList.remove('is-dragging');
             void persistDraggedGroupOrder(optionsContainer);
             void initialiseOptionsDialog();

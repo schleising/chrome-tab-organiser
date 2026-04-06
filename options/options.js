@@ -39,6 +39,36 @@ function getErrorMessage(error, fallbackMessage) {
     return fallbackMessage;
 }
 
+function isCreateGroupFormDirty() {
+    const groupNameInput = byId('group-name');
+    const hostInput = byId('group-urls');
+    const groupColourSelect = byId('group-colour');
+
+    const hasGroupName = Boolean(groupNameInput?.value.trim());
+    const hasHostInput = Boolean(hostInput?.value.trim());
+    const hasPendingHosts = pendingGroupUrls.length > 0;
+    const hasNonDefaultColour = Boolean(groupColourSelect?.value) && groupColourSelect.value !== DEFAULT_GROUP_COLOUR;
+
+    return hasGroupName || hasHostInput || hasPendingHosts || hasNonDefaultColour;
+}
+
+function updateHostActionButtonStates() {
+    const addHostnameButton = byId('add-hostname');
+    const hostInput = byId('group-urls');
+    const cancelButton = byId('cancel-edit');
+
+    if (addHostnameButton && hostInput) {
+        addHostnameButton.disabled = hostInput.value.trim().length === 0;
+    }
+
+    if (cancelButton) {
+        const isEditingGroup = Boolean(getEditingGroupName());
+        const canCancel = isEditingGroup || isCreateGroupFormDirty();
+        cancelButton.hidden = !canCancel;
+        cancelButton.disabled = !canCancel;
+    }
+}
+
 function suppressSyncGroupsRefresh() {
     suppressSyncGroupsRefreshUntil = Date.now() + SYNC_REFRESH_SUPPRESS_MS;
 }
@@ -373,6 +403,7 @@ function setHostnameInputButtonMode(isUpdate) {
     addHostnameButton.textContent = isUpdate ? 'Update' : 'Add';
     addHostnameButton.classList.toggle('btn-save', isUpdate);
     addHostnameButton.classList.toggle('btn-add', !isUpdate);
+    updateHostActionButtonStates();
 }
 
 function addHostnamesFromInput() {
@@ -420,6 +451,7 @@ function addHostnamesFromInput() {
 
     hostInput.value = '';
     renderPendingHostnames();
+    updateHostActionButtonStates();
     hostInput.focus();
     return true;
 }
@@ -462,6 +494,7 @@ function clearGroupForm() {
     draggingHostnameIndex = null;
     setHostnameInputButtonMode(false);
     renderPendingHostnames();
+    updateHostActionButtonStates();
 }
 
 function getEditingGroupName() {
@@ -513,6 +546,8 @@ function cancelCurrentGroupEdit() {
     if (cancelButton) {
         cancelButton.hidden = true;
     }
+
+    updateHostActionButtonStates();
 }
 
 function setDataToolsStatus(message, isError = false) {
@@ -557,6 +592,7 @@ async function applyPendingTabDraftToForm() {
     renderPendingHostnames();
 
     byId('group-urls').value = '';
+    updateHostActionButtonStates();
     byId('group-urls').focus();
     window.scrollTo(0, 0);
     setDataToolsStatus('Loaded tab into Create New Group.', false);
@@ -929,6 +965,8 @@ function animateGroupReorder(container, movedGroupName, direction) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     const addHostnameButton = byId('add-hostname');
+    const groupNameInput = byId('group-name');
+    const groupColourSelect = byId('group-colour');
     const hostInput = byId('group-urls');
     const cancelEditButton = byId('cancel-edit');
     const exportGroupsButton = byId('export-groups');
@@ -937,6 +975,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     addHostnameButton.addEventListener('click', addHostnamesFromInput);
     cancelEditButton?.addEventListener('click', cancelCurrentGroupEdit);
+    groupNameInput?.addEventListener('input', updateHostActionButtonStates);
+    groupColourSelect?.addEventListener('change', updateHostActionButtonStates);
+    hostInput.addEventListener('input', updateHostActionButtonStates);
     hostInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -946,6 +987,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     renderPendingHostnames();
     setHostnameInputButtonMode(false);
+    updateHostActionButtonStates();
     await initialiseOptionsDialog();
     const loadedPendingDraft = await applyPendingTabDraftToForm();
 
@@ -1050,6 +1092,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Hide the Cancel button
             const cancelButton = byId('cancel-edit');
             cancelButton.hidden = true;
+            updateHostActionButtonStates();
         } else {
             // If the button text does not start with "Update", we are creating a new group
             // Check if a group with the same name already exists
@@ -1287,6 +1330,7 @@ async function initialiseOptionsDialog() {
             // Unhide the Cancel button
             const cancelButton = byId('cancel-edit');
             cancelButton.hidden = false;
+            updateHostActionButtonStates();
 
             // Scroll to the top of the page to show the input fields
             window.scrollTo(0, 0);

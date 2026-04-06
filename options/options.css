@@ -552,6 +552,11 @@ label {
     filter: brightness(0.98);
 }
 
+.options-button:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+}
+
 select,
 ::picker(select) {
     appearance: base-select;

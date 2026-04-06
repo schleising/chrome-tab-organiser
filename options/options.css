@@ -361,7 +361,6 @@ label {
     flex: 0 0 auto;
 }
 
-.btn-organise::before,
 .btn-add::before,
 .btn-create::before,
 .btn-save::before,
@@ -386,10 +385,6 @@ label {
 }
 
 /* Inline SVG icons */
-.btn-organise::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18M3 6h12M3 18h8'/%3E%3C/svg%3E");
-}
-
 .btn-create::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
 }
@@ -432,10 +427,6 @@ label {
 }
 
 /* Force white SVG icons only where requested */
-.header .btn-organise::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18M3 6h12M3 18h8'/%3E%3C/svg%3E");
-}
-
 .new-group .btn-add::before,
 .new-group .btn-create::before,
 .new-group .btn-save::before,
@@ -449,12 +440,6 @@ label {
 
 .new-group .btn-cancel::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
-}
-
-.header .options-button {
-    background: var(--color-button-primary-bg);
-    color: var(--white);
-    box-shadow: 0 3px 8px var(--color-button-primary-shadow);
 }
 
 /* Keep Create New Group action icons/text high contrast */

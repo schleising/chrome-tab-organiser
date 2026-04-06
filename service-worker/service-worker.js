@@ -99,6 +99,36 @@ function queueContextMenuRebuild() {
     return contextMenuRebuildInFlight;
 }
 
+async function organiseAllOpenTabs(storedGroups) {
+    const normalWindows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+
+    for (const windowInfo of normalWindows) {
+        const tabs = await chrome.tabs.query({ windowId: windowInfo.id });
+
+        for (const tab of tabs) {
+            if (!tab.url) {
+                continue;
+            }
+
+            let parsedUrl;
+            try {
+                parsedUrl = new URL(tab.url);
+            } catch {
+                continue;
+            }
+
+            if (parsedUrl.protocol === 'chrome:') {
+                continue;
+            }
+
+            await organiseTab(tab.id, tab, storedGroups);
+            lastProcessedTabUrls.set(tab.id, tab.url);
+        }
+
+        scheduleArrangeTabGroups(windowInfo.id);
+    }
+}
+
 async function addTabToExistingGroup(groupName, tab) {
     if (!tab?.id || !tab.url) {
         return;
@@ -120,8 +150,8 @@ async function addTabToExistingGroup(groupName, tab) {
         await storeGroups(storedGroups);
     }
 
-    await organiseTab(tab.id, tab, storedGroups);
-    scheduleArrangeTabGroups(tab.windowId);
+    // Apply the updated rule set to all open tabs for consistency.
+    await organiseAllOpenTabs(storedGroups);
 }
 
 async function startNewGroupFromTab(tab) {

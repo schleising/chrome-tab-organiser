@@ -716,6 +716,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         clearGroupForm();
     });
+
+    // Keep the options UI in sync when groups are changed outside this page (e.g. context menu actions).
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'sync' && changes.tab_groups) {
+            void initialiseOptionsDialog();
+        }
+
+        if (areaName === 'local' && changes[PENDING_GROUP_DRAFT_KEY]?.newValue) {
+            void applyPendingTabDraftToForm();
+        }
+    });
 });
 
 async function initialiseOptionsDialog() {

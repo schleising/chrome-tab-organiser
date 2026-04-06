@@ -23,16 +23,7 @@ let dataToolsStatusTimeoutId = null;
 
 function isRegexEntry(entry) {
     const trimmed = entry.trim();
-    if (trimmed.startsWith('re:')) {
-        return true;
-    }
-
-    if (trimmed.startsWith('/')) {
-        const lastSlash = trimmed.lastIndexOf('/');
-        return lastSlash > 0;
-    }
-
-    return false;
+    return trimmed.startsWith('re:');
 }
 
 function isValidRegexEntry(entry) {
@@ -45,17 +36,6 @@ function isValidRegexEntry(entry) {
                 return false;
             }
             new RegExp(pattern, 'i');
-            return true;
-        }
-
-        if (trimmed.startsWith('/')) {
-            const lastSlash = trimmed.lastIndexOf('/');
-            if (lastSlash <= 0) {
-                return false;
-            }
-            const pattern = trimmed.slice(1, lastSlash);
-            const flags = trimmed.slice(lastSlash + 1);
-            new RegExp(pattern, flags);
             return true;
         }
     } catch {

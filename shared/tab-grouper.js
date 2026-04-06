@@ -18,11 +18,6 @@ function getCachedRegex(groupEntry) {
             if (pattern) {
                 compiledRegex = new RegExp(pattern, 'i');
             }
-        } else if (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0) {
-            const lastSlash = groupEntry.lastIndexOf('/');
-            const pattern = groupEntry.slice(1, lastSlash);
-            const flags = groupEntry.slice(lastSlash + 1);
-            compiledRegex = new RegExp(pattern, flags);
         }
     } catch {
         compiledRegex = null;
@@ -54,8 +49,8 @@ function evaluateGroupEntryMatch(tabUrl, parsedTabUrl, groupEntryRaw) {
         return { isMatch: false, tier: 0, score: 0 };
     }
 
-    // Advanced regex support: `re:pattern` or `/pattern/flags`.
-    if (groupEntry.startsWith('re:') || (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0)) {
+    // Advanced regex support: `re:pattern`.
+    if (groupEntry.startsWith('re:')) {
         const matcher = getCachedRegex(groupEntry);
         if (!matcher) {
             return { isMatch: false, tier: 0, score: 0 };

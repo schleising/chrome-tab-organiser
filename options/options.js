@@ -9,6 +9,7 @@ const DEFAULT_GROUP_COLOUR = 'blue';
 const CREATE_GROUP_LABEL = 'Create Group';
 const EXPORT_FILE_TYPE = 'application/json';
 const DATA_TOOLS_STATUS_TIMEOUT_MS = 3000;
+const PENDING_GROUP_DRAFT_KEY = 'pending_tab_group_draft';
 const REORDER_ANIMATION_DURATION_MS = 480;
 const REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -257,6 +258,30 @@ function setDataToolsStatus(message, isError = false) {
             dataToolsStatusTimeoutId = null;
         }, DATA_TOOLS_STATUS_TIMEOUT_MS);
     }
+}
+
+async function applyPendingTabDraftToForm() {
+    const draftResult = await chrome.storage.local.get(PENDING_GROUP_DRAFT_KEY);
+    const draft = draftResult?.[PENDING_GROUP_DRAFT_KEY];
+    if (!draft || typeof draft.url !== 'string') {
+        return;
+    }
+
+    const suggestedName = typeof draft.nameSuggestion === 'string' ? draft.nameSuggestion.trim() : '';
+    byId('group-name').value = suggestedName;
+
+    const normalisedDraftUrl = isRegexEntry(draft.url) ? draft.url.trim() : draft.url.trim().toLowerCase();
+    pendingGroupUrls = normalisedDraftUrl ? [normalisedDraftUrl] : [];
+    editingHostnameIndex = null;
+    setHostnameInputButtonMode(false);
+    renderPendingHostnames();
+
+    byId('group-urls').value = '';
+    byId('group-urls').focus();
+    window.scrollTo(0, 0);
+    setDataToolsStatus('Loaded tab into Create New Group.', false);
+
+    await chrome.storage.local.remove(PENDING_GROUP_DRAFT_KEY);
 }
 
 function getExportPayload(groups) {
@@ -599,6 +624,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderPendingHostnames();
     setHostnameInputButtonMode(false);
     await initialiseOptionsDialog();
+    await applyPendingTabDraftToForm();
 
     exportGroupsButton?.addEventListener('click', exportGroupsToJson);
     importGroupsButton?.addEventListener('click', importGroupsFromPicker);

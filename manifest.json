@@ -20,7 +20,8 @@
   "permissions": [
     "storage",
     "tabs",
-    "tabGroups"
+    "tabGroups",
+    "contextMenus"
   ],
   "incognito": "not_allowed"
 }

@@ -78,7 +78,11 @@ body {
     margin: 0 auto;
     max-width: var(--layout-max-width);
     padding: 0.85rem;
-    background: radial-gradient(circle at 15% -30%, var(--color-page-bg-highlight) 0%, var(--color-page-bg) 56%);
+    background:
+        radial-gradient(120% 95% at -8% -12%, #f9fcff 0%, rgba(249, 252, 255, 0) 56%),
+        radial-gradient(88% 72% at 106% 8%, #dff2f4 0%, rgba(223, 242, 244, 0) 60%),
+        radial-gradient(78% 64% at 50% 108%, #e6eefc 0%, rgba(230, 238, 252, 0) 64%),
+        linear-gradient(145deg, #eff6ff 0%, #e8f0fb 45%, #e5eef6 100%);
 }
 
 .header {

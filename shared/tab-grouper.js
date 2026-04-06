@@ -72,10 +72,10 @@ export async function getStoredGroups() {
 }
 
 // Add a listener for tab updates
-export async function organiseTab(updatedTabId, updatedTab) {
+export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride = null) {
     // Get the stored groups from local storage
     /** @type {StoredGroup[]} */
-    const storedGroups = await getStoredGroups();
+    const storedGroups = storedGroupsOverride ?? await getStoredGroups();
 
     // Return if no groups are stored
     if (storedGroups.length === 0) {

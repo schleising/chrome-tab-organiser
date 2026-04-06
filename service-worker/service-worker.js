@@ -2,7 +2,28 @@
  * @typedef {import('../types/types.js').StoredGroup} StoredGroup
  */
 
-import { organiseTab, arrangeTabGroups } from '../shared/tab-grouper.js';
+import { organiseTab, arrangeTabGroups, getStoredGroups } from '../shared/tab-grouper.js';
+
+const ARRANGE_DEBOUNCE_MS = 220;
+const arrangeTimers = new Map();
+
+function scheduleArrangeTabGroups(windowId) {
+    const existingTimer = arrangeTimers.get(windowId);
+    if (existingTimer) {
+        clearTimeout(existingTimer);
+    }
+
+    const timerId = setTimeout(async () => {
+        arrangeTimers.delete(windowId);
+        try {
+            await arrangeTabGroups(windowId);
+        } catch (error) {
+            console.error(`Error arranging tab groups for window ${windowId}:`, error);
+        }
+    }, ARRANGE_DEBOUNCE_MS);
+
+    arrangeTimers.set(windowId, timerId);
+}
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
@@ -45,9 +66,14 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
         return;
     }
 
-    // Call the organiseTab function to handle the tab grouping logic
-    await organiseTab(updatedTabId, updatedTab);
+    const storedGroups = await getStoredGroups();
+    if (storedGroups.length === 0) {
+        return;
+    }
 
-    // Arrange tab groups after the tab has been organised
-    await arrangeTabGroups(updatedTab.windowId);
+    // Call the organiseTab function to handle the tab grouping logic
+    await organiseTab(updatedTabId, updatedTab, storedGroups);
+
+    // Arrange tab groups after updates settle to avoid repeated churn.
+    scheduleArrangeTabGroups(updatedTab.windowId);
 });

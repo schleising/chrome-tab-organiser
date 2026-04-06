@@ -194,24 +194,50 @@ function getExportPayload(groups) {
 }
 
 function validateImportedGroups(data) {
+    const allowedColours = new Set(['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange']);
     const groupsCandidate = Array.isArray(data) ? data : data?.groups;
     if (!Array.isArray(groupsCandidate)) {
         throw new Error('JSON must be an array of groups or an object with a groups array.');
     }
 
-    const isValid = groupsCandidate.every((group) => (
-        group
-        && typeof group.name === 'string'
-        && typeof group.colour === 'string'
-        && Array.isArray(group.urls)
-        && group.urls.every((url) => typeof url === 'string')
-    ));
+    const normalisedGroups = groupsCandidate.map((group) => {
+        if (!group || typeof group.name !== 'string' || typeof group.colour !== 'string' || !Array.isArray(group.urls)) {
+            throw new Error('JSON groups are malformed. Expected {name, colour, urls[]} entries.');
+        }
 
-    if (!isValid) {
-        throw new Error('JSON groups are malformed. Expected {name, colour, urls[]} entries.');
-    }
+        const name = group.name.trim();
+        const colour = group.colour.trim().toLowerCase();
+        if (!name) {
+            throw new Error('Group names must be non-empty.');
+        }
+        if (!allowedColours.has(colour)) {
+            throw new Error(`Unsupported group colour: ${group.colour}`);
+        }
 
-    return groupsCandidate;
+        const urls = group.urls
+            .map((url) => {
+                if (typeof url !== 'string') {
+                    throw new Error('Each URL entry must be a string.');
+                }
+                const trimmedUrl = url.trim();
+                if (!trimmedUrl) {
+                    throw new Error('URL entries must be non-empty.');
+                }
+                return isRegexEntry(trimmedUrl) ? trimmedUrl : trimmedUrl.toLowerCase();
+            });
+
+        if (urls.length === 0) {
+            throw new Error(`Group "${name}" must contain at least one URL entry.`);
+        }
+
+        return {
+            name,
+            colour,
+            urls: Array.from(new Set(urls))
+        };
+    });
+
+    return normalisedGroups;
 }
 
 function mergeGroupsByName(existingGroups, importedGroups) {
@@ -847,6 +873,11 @@ async function initialiseOptionsDialog() {
 // This function will be called to organise all tabs in the current window
 async function organiseAllTabs() {
     const normalWindows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+    const storedGroups = await getStoredGroups();
+
+    if (storedGroups.length === 0) {
+        return;
+    }
 
     // Iterate through each normal window and organise its tabs.
     for (const windowInfo of normalWindows) {
@@ -870,7 +901,7 @@ async function organiseAllTabs() {
             }
 
             // Call the organiseTab function to handle the tab grouping logic
-            await organiseTab(tab.id, tab);
+            await organiseTab(tab.id, tab, storedGroups);
         }
 
         // After organising tabs in this window, arrange that window's groups.

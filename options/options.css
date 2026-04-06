@@ -504,6 +504,19 @@ select,
     appearance: base-select;
 }
 
+@supports not (appearance: base-select) {
+    /* Fallback for browsers/environments without customizable select support. */
+    #group-colour {
+        appearance: auto;
+        padding-right: 1.8rem;
+    }
+
+    #group-colour > .options-button,
+    #group-colour > .options-button > selectedcontent {
+        display: none;
+    }
+}
+
 /* Make colour dots in the Group Colour dropdown easier to see */
 #group-colour .blue,
 #group-colour .red,

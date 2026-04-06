@@ -202,7 +202,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     if (typeof info.menuItemId === 'string' && info.menuItemId.startsWith(MENU_GROUP_PREFIX)) {
         const encodedName = info.menuItemId.slice(MENU_GROUP_PREFIX.length);
-        const groupName = decodeURIComponent(encodedName);
+        let groupName;
+        try {
+            groupName = decodeURIComponent(encodedName);
+        } catch {
+            return;
+        }
         void addTabToExistingGroup(groupName, tab);
     }
 });

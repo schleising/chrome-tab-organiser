@@ -4,6 +4,31 @@
 
 /** @type {Map<string, RegExp|null>} */
 const regexCache = new Map();
+const MAX_REGEX_PATTERN_LENGTH = 180;
+
+function getRegexSafetyIssue(pattern) {
+    if (!pattern) {
+        return 'empty-pattern';
+    }
+
+    if (pattern.length > MAX_REGEX_PATTERN_LENGTH) {
+        return 'pattern-too-long';
+    }
+
+    if (/\\[1-9]/.test(pattern)) {
+        return 'backreference-not-allowed';
+    }
+
+    if (/\((?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)\s*[+*{]/.test(pattern)) {
+        return 'nested-quantifier';
+    }
+
+    if (/(?:\.\*|\.\+)\s*(?:\.\*|\.\+|[+*{])/.test(pattern)) {
+        return 'repeated-wildcard';
+    }
+
+    return null;
+}
 
 function getCachedRegex(groupEntry) {
     if (regexCache.has(groupEntry)) {
@@ -15,8 +40,11 @@ function getCachedRegex(groupEntry) {
     try {
         if (groupEntry.startsWith('re:')) {
             const pattern = groupEntry.slice(3).trim();
-            if (pattern) {
+            const safetyIssue = getRegexSafetyIssue(pattern);
+            if (!safetyIssue) {
                 compiledRegex = new RegExp(pattern, 'i');
+            } else {
+                console.warn(`Skipping unsafe regex rule (${safetyIssue}):`, groupEntry);
             }
         }
     } catch {

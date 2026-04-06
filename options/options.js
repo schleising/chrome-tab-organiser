@@ -16,6 +16,7 @@ const CHIP_REORDER_ANIMATION_DURATION_MS = 220;
 const CHIP_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const GROUP_CARD_REORDER_ANIMATION_DURATION_MS = 260;
 const GROUP_CARD_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const MAX_REGEX_PATTERN_LENGTH = 180;
 
 const byId = (id) => document.querySelector(`#${id}`);
 
@@ -40,23 +41,44 @@ function isRegexEntry(entry) {
     return trimmed.startsWith('re:');
 }
 
-function isValidRegexEntry(entry) {
+function getRegexValidationError(entry) {
     const trimmed = entry.trim();
-
-    try {
-        if (trimmed.startsWith('re:')) {
-            const pattern = trimmed.slice(3).trim();
-            if (!pattern) {
-                return false;
-            }
-            new RegExp(pattern, 'i');
-            return true;
-        }
-    } catch {
-        return false;
+    if (!trimmed.startsWith('re:')) {
+        return null;
     }
 
-    return true;
+    const pattern = trimmed.slice(3).trim();
+    if (!pattern) {
+        return 'Regex pattern cannot be empty.';
+    }
+
+    if (pattern.length > MAX_REGEX_PATTERN_LENGTH) {
+        return `Regex pattern is too long (max ${MAX_REGEX_PATTERN_LENGTH} characters).`;
+    }
+
+    if (/\\[1-9]/.test(pattern)) {
+        return 'Regex backreferences are not allowed.';
+    }
+
+    if (/\((?:[^()\\]|\\.)*[+*](?:[^()\\]|\\.)*\)\s*[+*{]/.test(pattern)) {
+        return 'Regex uses nested quantifiers and may be too expensive.';
+    }
+
+    if (/(?:\.\*|\.\+)\s*(?:\.\*|\.\+|[+*{])/.test(pattern)) {
+        return 'Regex uses repeated wildcards and may be too expensive.';
+    }
+
+    try {
+        new RegExp(pattern, 'i');
+    } catch {
+        return 'Regex syntax is invalid.';
+    }
+
+    return null;
+}
+
+function isValidRegexEntry(entry) {
+    return getRegexValidationError(entry) === null;
 }
 
 function normaliseHostnames(rawValue) {
@@ -332,8 +354,9 @@ function addHostnamesFromInput() {
     }
 
     for (const hostname of parsedHostnames) {
-        if (!isValidRegexEntry(hostname)) {
-            groupError.textContent = `Invalid regex: ${hostname}`;
+        const regexError = getRegexValidationError(hostname);
+        if (regexError) {
+            groupError.textContent = regexError;
             groupError.hidden = false;
             return false;
         }
@@ -546,6 +569,12 @@ function validateImportedGroups(data) {
                 if (!trimmedUrl) {
                     throw new Error('URL entries must be non-empty.');
                 }
+
+                const regexError = getRegexValidationError(trimmedUrl);
+                if (regexError) {
+                    throw new Error(`Invalid regex in group "${name}": ${regexError}`);
+                }
+
                 return isRegexEntry(trimmedUrl) ? trimmedUrl : trimmedUrl.toLowerCase();
             });
 
@@ -585,12 +614,18 @@ function mergeGroupsByName(existingGroups, importedGroups) {
     return Array.from(mergedMap.values());
 }
 
-function requestImportMode() {
+function requestImportMode(dialogSummary = null) {
     return new Promise((resolve) => {
         const importDialog = byId('import-dialog');
         if (!importDialog) {
             resolve('overwrite');
             return;
+        }
+
+        const importMessage = byId('import-message');
+        if (importMessage) {
+            importMessage.textContent = dialogSummary
+                || 'Existing groups were found. Choose how to import the selected file.';
         }
 
         importDialog.returnValue = '';
@@ -658,10 +693,18 @@ async function applyImportedJsonText(rawText) {
     const parsed = JSON.parse(rawText);
     const importedGroups = validateImportedGroups(parsed);
     const existingGroups = await getStoredGroups();
+    const regexRuleCount = importedGroups.reduce((count, group) => {
+        return count + group.urls.filter((urlEntry) => isRegexEntry(urlEntry)).length;
+    }, 0);
 
     let groupsToStore = importedGroups;
     if (existingGroups.length > 0) {
-        const importMode = await requestImportMode();
+        let importSummary = 'Existing groups were found. Choose how to import the selected file.';
+        if (regexRuleCount > 0) {
+            importSummary += ` This file contains ${regexRuleCount} regex rule${regexRuleCount === 1 ? '' : 's'}; unsafe regex patterns are blocked for safety.`;
+        }
+
+        const importMode = await requestImportMode(importSummary);
         if (importMode === 'cancel') {
             setDataToolsStatus('Import cancelled.', false);
             return;

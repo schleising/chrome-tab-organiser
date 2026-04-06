@@ -95,6 +95,33 @@ body {
     letter-spacing: -0.02em;
 }
 
+.data-tools {
+    margin-bottom: 0.75rem;
+}
+
+.data-tools-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.data-tools-status {
+    margin-top: 0.45rem;
+    padding-top: 0.35rem;
+}
+
+.data-tools-buttons .options-button {
+    background: var(--color-button-neutral-bg);
+    color: var(--color-button-neutral-text);
+    border-color: var(--color-button-neutral-border);
+    box-shadow: none;
+}
+
+.data-tools-status-error {
+    color: var(--color-feedback-error);
+    font-weight: 600;
+}
+
 .new-group,
 .existing-group,
 .dialog-container {
@@ -343,7 +370,9 @@ label {
 .btn-delete::before,
 .btn-edit::before,
 .btn-up::before,
-.btn-down::before {
+.btn-down::before,
+.btn-export::before,
+.btn-import::before {
     display: inline-block;
 }
 
@@ -392,6 +421,14 @@ label {
 
 .btn-down::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.btn-export::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5'/%3E%3Cpath d='M5 21h14'/%3E%3C/svg%3E");
+}
+
+.btn-import::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21V9M17 14l-5-5-5 5'/%3E%3Cpath d='M5 3h14'/%3E%3C/svg%3E");
 }
 
 /* Force white SVG icons only where requested */

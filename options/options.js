@@ -7,6 +7,8 @@ import { storeGroups, getStoredGroups, organiseTab, deleteGroup, arrangeTabGroup
 const ERROR_TIMEOUT_MS = 5000;
 const DEFAULT_GROUP_COLOUR = 'blue';
 const CREATE_GROUP_LABEL = 'Create Group';
+const EXPORT_FILE_TYPE = 'application/json';
+const DATA_TOOLS_STATUS_TIMEOUT_MS = 3000;
 const REORDER_ANIMATION_DURATION_MS = 480;
 const REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -14,6 +16,8 @@ const byId = (id) => document.querySelector(`#${id}`);
 
 /** @type {string[]} */
 let pendingGroupUrls = [];
+
+let dataToolsStatusTimeoutId = null;
 
 function isRegexEntry(entry) {
     const trimmed = entry.trim();
@@ -156,6 +160,202 @@ function clearGroupForm() {
     renderPendingHostnames();
 }
 
+function setDataToolsStatus(message, isError = false) {
+    const statusElement = byId('data-tools-status');
+    if (!statusElement) {
+        return;
+    }
+
+    if (dataToolsStatusTimeoutId) {
+        clearTimeout(dataToolsStatusTimeoutId);
+        dataToolsStatusTimeoutId = null;
+    }
+
+    statusElement.hidden = !message;
+    statusElement.textContent = message;
+    statusElement.classList.toggle('data-tools-status-error', isError);
+
+    if (message) {
+        dataToolsStatusTimeoutId = setTimeout(() => {
+            statusElement.hidden = true;
+            statusElement.textContent = '';
+            statusElement.classList.remove('data-tools-status-error');
+            dataToolsStatusTimeoutId = null;
+        }, DATA_TOOLS_STATUS_TIMEOUT_MS);
+    }
+}
+
+function getExportPayload(groups) {
+    return {
+        schema: 'chrome-tab-organiser/v1',
+        exportedAt: new Date().toISOString(),
+        groups
+    };
+}
+
+function validateImportedGroups(data) {
+    const groupsCandidate = Array.isArray(data) ? data : data?.groups;
+    if (!Array.isArray(groupsCandidate)) {
+        throw new Error('JSON must be an array of groups or an object with a groups array.');
+    }
+
+    const isValid = groupsCandidate.every((group) => (
+        group
+        && typeof group.name === 'string'
+        && typeof group.colour === 'string'
+        && Array.isArray(group.urls)
+        && group.urls.every((url) => typeof url === 'string')
+    ));
+
+    if (!isValid) {
+        throw new Error('JSON groups are malformed. Expected {name, colour, urls[]} entries.');
+    }
+
+    return groupsCandidate;
+}
+
+function mergeGroupsByName(existingGroups, importedGroups) {
+    const mergedMap = new Map(existingGroups.map((group) => [group.name, { ...group, urls: [...group.urls] }]));
+
+    importedGroups.forEach((importedGroup) => {
+        const existingGroup = mergedMap.get(importedGroup.name);
+        if (!existingGroup) {
+            mergedMap.set(importedGroup.name, { ...importedGroup, urls: [...importedGroup.urls] });
+            return;
+        }
+
+        // Merge keeps URLs added after export while still applying imported updates.
+        const mergedUrls = Array.from(new Set([...existingGroup.urls, ...importedGroup.urls]));
+        mergedMap.set(importedGroup.name, {
+            ...existingGroup,
+            ...importedGroup,
+            urls: mergedUrls
+        });
+    });
+
+    return Array.from(mergedMap.values());
+}
+
+function requestImportMode() {
+    return new Promise((resolve) => {
+        const importDialog = byId('import-dialog');
+        if (!importDialog) {
+            resolve('overwrite');
+            return;
+        }
+
+        importDialog.returnValue = '';
+        importDialog.showModal();
+
+        const onClose = () => {
+            importDialog.removeEventListener('close', onClose);
+            const chosenMode = importDialog.returnValue;
+            if (chosenMode === 'merge' || chosenMode === 'overwrite') {
+                resolve(chosenMode);
+                return;
+            }
+            resolve('cancel');
+        };
+
+        importDialog.addEventListener('close', onClose);
+    });
+}
+
+function downloadTextFile(content, fileName) {
+    const blob = new Blob([content], { type: EXPORT_FILE_TYPE });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(objectUrl);
+}
+
+async function exportGroupsToJson() {
+    try {
+        const groups = await getStoredGroups();
+        const exportPayload = getExportPayload(groups);
+        const exportText = JSON.stringify(exportPayload, null, 2);
+        const dateSuffix = new Date().toISOString().slice(0, 10);
+        const fileName = `chrome-tab-organiser-groups-${dateSuffix}.json`;
+
+        if ('showSaveFilePicker' in window) {
+            const fileHandle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{
+                    description: 'JSON Files',
+                    accept: { [EXPORT_FILE_TYPE]: ['.json'] }
+                }]
+            });
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(exportText);
+            await writable.close();
+        } else {
+            downloadTextFile(exportText, fileName);
+        }
+
+        setDataToolsStatus(`Exported ${groups.length} group(s).`, false);
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            setDataToolsStatus('Export cancelled.', false);
+            return;
+        }
+        setDataToolsStatus(`Export failed: ${error?.message || error}`, true);
+    }
+}
+
+async function applyImportedJsonText(rawText) {
+    const parsed = JSON.parse(rawText);
+    const importedGroups = validateImportedGroups(parsed);
+    const existingGroups = await getStoredGroups();
+
+    let groupsToStore = importedGroups;
+    if (existingGroups.length > 0) {
+        const importMode = await requestImportMode();
+        if (importMode === 'cancel') {
+            setDataToolsStatus('Import cancelled.', false);
+            return;
+        }
+
+        if (importMode === 'merge') {
+            groupsToStore = mergeGroupsByName(existingGroups, importedGroups);
+        }
+    }
+
+    await storeGroups(groupsToStore);
+    await initialiseOptionsDialog();
+    await organiseAllTabs();
+    setDataToolsStatus(`Imported ${groupsToStore.length} group(s).`, false);
+}
+
+async function importGroupsFromPicker() {
+    try {
+        if ('showOpenFilePicker' in window) {
+            const [fileHandle] = await window.showOpenFilePicker({
+                multiple: false,
+                types: [{
+                    description: 'JSON Files',
+                    accept: { [EXPORT_FILE_TYPE]: ['.json'] }
+                }]
+            });
+
+            const file = await fileHandle.getFile();
+            const text = await file.text();
+            await applyImportedJsonText(text);
+            return;
+        }
+
+        byId('import-groups-file').click();
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            setDataToolsStatus('Import cancelled.', false);
+            return;
+        }
+        setDataToolsStatus(`Import failed: ${error?.message || error}`, true);
+    }
+}
+
 function scrollGroupCardIntoView(groupName) {
     const groupCards = document.querySelectorAll('.existing-group');
     const targetCard = Array.from(groupCards).find(card => card.dataset.groupName === groupName);
@@ -291,6 +491,9 @@ function animateGroupReorder(container, movedGroupName, direction) {
 document.addEventListener("DOMContentLoaded", async () => {
     const addHostnameButton = byId('add-hostname');
     const hostInput = byId('group-urls');
+    const exportGroupsButton = byId('export-groups');
+    const importGroupsButton = byId('import-groups');
+    const importGroupsFileInput = byId('import-groups-file');
 
     addHostnameButton.addEventListener('click', addHostnamesFromInput);
     hostInput.addEventListener('keydown', (event) => {
@@ -302,6 +505,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     renderPendingHostnames();
     await initialiseOptionsDialog();
+
+    exportGroupsButton?.addEventListener('click', exportGroupsToJson);
+    importGroupsButton?.addEventListener('click', importGroupsFromPicker);
+    importGroupsFileInput?.addEventListener('change', async (event) => {
+        try {
+            const selectedFile = event.target.files?.[0];
+            if (!selectedFile) {
+                return;
+            }
+
+            const text = await selectedFile.text();
+            await applyImportedJsonText(text);
+        } catch (error) {
+            setDataToolsStatus(`Import failed: ${error?.message || error}`, true);
+        } finally {
+            event.target.value = '';
+        }
+    });
 
     // Add event listener for the "Create Group" button
     const createGroupButton = byId('create-group');

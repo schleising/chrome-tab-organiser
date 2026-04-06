@@ -14,6 +14,14 @@
     <h1>Options</h1>
     <button id="organise-all-tabs" class="options-button btn-organise">Organise All Tabs</button>
   </div>
+  <div class="data-tools">
+    <div class="data-tools-buttons">
+      <button id="export-groups" type="button" class="options-button btn-export">Export Groups</button>
+      <button id="import-groups" type="button" class="options-button btn-import">Import Groups</button>
+    </div>
+    <p id="data-tools-status" class="field-hint data-tools-status" hidden></p>
+    <input id="import-groups-file" type="file" accept="application/json,.json" hidden>
+  </div>
   <div class="new-group">
     <div class="new-group-container">
       <h2>Create New Group</h2>
@@ -56,6 +64,19 @@
         <p id="confirm-message"></p>
         <div class="dialog-buttons">
           <button value="ok" class="options-button btn-ok">OK</button>
+          <button value="cancel" class="options-button btn-cancel">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="import-dialog">
+    <form method="dialog">
+      <div class="dialog-container">
+        <h2>Import Groups</h2>
+        <p id="import-message">Existing groups were found. Choose how to import the selected file.</p>
+        <div class="dialog-buttons">
+          <button value="merge" class="options-button btn-import">Merge</button>
+          <button value="overwrite" class="options-button btn-ok">Overwrite</button>
           <button value="cancel" class="options-button btn-cancel">Cancel</button>
         </div>
       </div>

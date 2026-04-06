@@ -224,6 +224,16 @@ function clearGroupForm() {
     renderPendingHostnames();
 }
 
+function cancelCurrentGroupEdit() {
+    clearGroupForm();
+    resetCreateButtonState();
+
+    const cancelButton = byId('cancel-edit');
+    if (cancelButton) {
+        cancelButton.hidden = true;
+    }
+}
+
 function setDataToolsStatus(message, isError = false) {
     const statusElement = byId('data-tools-status');
     if (!statusElement) {
@@ -572,11 +582,13 @@ function animateGroupReorder(container, movedGroupName, direction) {
 document.addEventListener("DOMContentLoaded", async () => {
     const addHostnameButton = byId('add-hostname');
     const hostInput = byId('group-urls');
+    const cancelEditButton = byId('cancel-edit');
     const exportGroupsButton = byId('export-groups');
     const importGroupsButton = byId('import-groups');
     const importGroupsFileInput = byId('import-groups-file');
 
     addHostnameButton.addEventListener('click', addHostnamesFromInput);
+    cancelEditButton?.addEventListener('click', cancelCurrentGroupEdit);
     hostInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -674,7 +686,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Hide the Cancel button
             const cancelButton = byId('cancel-edit');
             cancelButton.hidden = true;
-            cancelButton.onclick = null;
         } else {
             // If the button text does not start with "Update", we are creating a new group
             // Check if a group with the same name already exists
@@ -826,19 +837,6 @@ async function initialiseOptionsDialog() {
             // Unhide the Cancel button
             const cancelButton = byId('cancel-edit');
             cancelButton.hidden = false;
-
-            // Use a single click handler so repeated edits do not stack listeners.
-            cancelButton.onclick = function cancelEditHandler() {
-                // Clear the input fields
-                clearGroupForm();
-
-                // Reset the button text to "Create Group"
-                resetCreateButtonState();
-
-                // Hide the Cancel button
-                cancelButton.hidden = true;
-                cancelButton.onclick = null;
-            };
 
             // Scroll to the top of the page to show the input fields
             window.scrollTo(0, 0);

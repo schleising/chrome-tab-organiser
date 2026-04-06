@@ -186,6 +186,7 @@ function addHostnamesFromInput() {
 
     hostInput.value = '';
     renderPendingHostnames();
+    hostInput.focus();
     return true;
 }
 

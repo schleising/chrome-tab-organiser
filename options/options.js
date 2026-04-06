@@ -16,6 +16,7 @@ const byId = (id) => document.querySelector(`#${id}`);
 
 /** @type {string[]} */
 let pendingGroupUrls = [];
+let editingHostnameIndex = null;
 
 let dataToolsStatusTimeoutId = null;
 
@@ -78,6 +79,9 @@ function renderPendingHostnames() {
     pendingGroupUrls.forEach((hostname, index) => {
         const item = document.createElement('li');
         item.className = 'group-host-item';
+        if (editingHostnameIndex === index) {
+            item.classList.add('is-editing');
+        }
 
         const hostText = document.createElement('span');
         hostText.textContent = hostname;
@@ -86,6 +90,25 @@ function renderPendingHostnames() {
         }
         item.appendChild(hostText);
 
+        const editButton = document.createElement('button');
+        editButton.type = 'button';
+        editButton.className = 'host-edit-button';
+        editButton.setAttribute('aria-label', `Edit ${hostname}`);
+        editButton.setAttribute('title', 'Edit hostname');
+        editButton.textContent = '';
+        editButton.addEventListener('click', () => {
+            editingHostnameIndex = index;
+            setHostnameInputButtonMode(true);
+
+            const hostInput = byId('group-urls');
+            hostInput.value = hostname;
+            hostInput.focus();
+            hostInput.select();
+
+            renderPendingHostnames();
+        });
+        item.appendChild(editButton);
+
         const removeButton = document.createElement('button');
         removeButton.type = 'button';
         removeButton.className = 'host-remove-button';
@@ -93,6 +116,13 @@ function renderPendingHostnames() {
         removeButton.textContent = '×';
         removeButton.addEventListener('click', () => {
             pendingGroupUrls.splice(index, 1);
+            if (editingHostnameIndex === index) {
+                editingHostnameIndex = null;
+                setHostnameInputButtonMode(false);
+                byId('group-urls').value = '';
+            } else if (editingHostnameIndex !== null && editingHostnameIndex > index) {
+                editingHostnameIndex -= 1;
+            }
             renderPendingHostnames();
         });
 
@@ -101,10 +131,27 @@ function renderPendingHostnames() {
     });
 }
 
+function setHostnameInputButtonMode(isUpdate) {
+    const addHostnameButton = byId('add-hostname');
+    if (!addHostnameButton) {
+        return;
+    }
+
+    addHostnameButton.textContent = isUpdate ? 'Update' : 'Add';
+    addHostnameButton.classList.toggle('btn-save', isUpdate);
+    addHostnameButton.classList.toggle('btn-add', !isUpdate);
+}
+
 function addHostnamesFromInput() {
     const hostInput = byId('group-urls');
     const groupError = byId('group-error');
     const parsedHostnames = normaliseHostnames(hostInput.value);
+
+    if (editingHostnameIndex !== null && parsedHostnames.length !== 1) {
+        groupError.textContent = 'Update mode expects exactly one hostname.';
+        groupError.hidden = false;
+        return false;
+    }
 
     for (const hostname of parsedHostnames) {
         if (!isValidRegexEntry(hostname)) {
@@ -117,9 +164,23 @@ function addHostnamesFromInput() {
     groupError.textContent = '';
     groupError.hidden = true;
 
-    for (const hostname of parsedHostnames) {
-        if (!pendingGroupUrls.includes(hostname)) {
-            pendingGroupUrls.push(hostname);
+    if (editingHostnameIndex !== null) {
+        const updatedHostname = parsedHostnames[0];
+        const duplicateIndex = pendingGroupUrls.findIndex((hostname, index) => hostname === updatedHostname && index !== editingHostnameIndex);
+        if (duplicateIndex !== -1) {
+            groupError.textContent = 'That hostname already exists in this group.';
+            groupError.hidden = false;
+            return false;
+        }
+
+        pendingGroupUrls[editingHostnameIndex] = updatedHostname;
+        editingHostnameIndex = null;
+        setHostnameInputButtonMode(false);
+    } else {
+        for (const hostname of parsedHostnames) {
+            if (!pendingGroupUrls.includes(hostname)) {
+                pendingGroupUrls.push(hostname);
+            }
         }
     }
 
@@ -157,6 +218,8 @@ function clearGroupForm() {
     byId('group-colour').value = DEFAULT_GROUP_COLOUR;
     byId('group-urls').value = '';
     pendingGroupUrls = [];
+    editingHostnameIndex = null;
+    setHostnameInputButtonMode(false);
     renderPendingHostnames();
 }
 
@@ -521,6 +584,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     renderPendingHostnames();
+    setHostnameInputButtonMode(false);
     await initialiseOptionsDialog();
 
     exportGroupsButton?.addEventListener('click', exportGroupsToJson);
@@ -748,6 +812,8 @@ async function initialiseOptionsDialog() {
             byId('group-colour').value = group.colour;
             byId('group-urls').value = '';
             pendingGroupUrls = [...group.urls];
+            editingHostnameIndex = null;
+            setHostnameInputButtonMode(false);
             renderPendingHostnames();
 
             // Set the button text to "Update <Group Name>"

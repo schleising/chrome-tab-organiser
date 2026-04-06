@@ -347,6 +347,26 @@ label {
     box-shadow: 0 18px 30px color-mix(in srgb, var(--color-shadow-card) 82%, transparent);
 }
 
+.existing-group.is-removing {
+    pointer-events: none;
+    animation: group-card-remove 220ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes group-card-remove {
+    from {
+        opacity: 1;
+        transform: scale(1);
+        max-height: 24rem;
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.98);
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
 .existing-group-header {
     display: flex;
     flex-direction: row;

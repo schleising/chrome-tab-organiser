@@ -16,6 +16,8 @@ const CHIP_REORDER_ANIMATION_DURATION_MS = 220;
 const CHIP_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const GROUP_CARD_REORDER_ANIMATION_DURATION_MS = 260;
 const GROUP_CARD_REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const GROUP_CARD_REMOVE_ANIMATION_DURATION_MS = 220;
+const SYNC_REFRESH_SUPPRESS_MS = 900;
 const MAX_REGEX_PATTERN_LENGTH = 180;
 
 const byId = (id) => document.querySelector(`#${id}`);
@@ -25,6 +27,7 @@ let pendingGroupUrls = [];
 let editingHostnameIndex = null;
 let draggingHostnameIndex = null;
 let draggingGroupName = null;
+let suppressSyncGroupsRefreshUntil = 0;
 
 let dataToolsStatusTimeoutId = null;
 
@@ -34,6 +37,10 @@ function getErrorMessage(error, fallbackMessage) {
     }
 
     return fallbackMessage;
+}
+
+function suppressSyncGroupsRefresh() {
+    suppressSyncGroupsRefreshUntil = Date.now() + SYNC_REFRESH_SUPPRESS_MS;
 }
 
 function isRegexEntry(entry) {
@@ -296,6 +303,32 @@ function animateGroupCardReflow(container, mutateLayout) {
             );
         }
     }
+}
+
+function animateGroupCardRemoval(container, cardToRemove) {
+    return new Promise((resolve) => {
+        if (!cardToRemove || !cardToRemove.isConnected) {
+            resolve();
+            return;
+        }
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) {
+            animateGroupCardReflow(container, () => {
+                cardToRemove.remove();
+            });
+            resolve();
+            return;
+        }
+
+        cardToRemove.classList.add('is-removing');
+        window.setTimeout(() => {
+            animateGroupCardReflow(container, () => {
+                cardToRemove.remove();
+            });
+            resolve();
+        }, GROUP_CARD_REMOVE_ANIMATION_DURATION_MS);
+    });
 }
 
 async function persistDraggedGroupOrder(optionsContainer) {
@@ -1033,6 +1066,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Keep the options UI in sync when groups are changed outside this page (e.g. context menu actions).
     chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'sync' && changes.tab_groups) {
+            if (Date.now() < suppressSyncGroupsRefreshUntil) {
+                return;
+            }
             void initialiseOptionsDialog();
         }
 
@@ -1176,10 +1212,14 @@ async function initialiseOptionsDialog() {
             dialog.addEventListener('close', async function dialogHandler() {
                 if (dialog.returnValue === 'ok') {
                     try {
+                        await animateGroupCardRemoval(optionsContainer, groupElement);
+
                         // Remove the group from storage
                         /** @type {StoredGroup[]} */
                         let storedGroups = await getStoredGroups();
                         storedGroups = storedGroups.filter(g => g.name !== group.name);
+
+                        suppressSyncGroupsRefresh();
                         await storeGroups(storedGroups);
 
                         // Refresh the options UI
@@ -1269,10 +1309,12 @@ async function initialiseOptionsDialog() {
                 if (groupIndex > 0) {
                     // Swap with the previous group
                     [storedGroups[groupIndex - 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex - 1]];
-                    await storeGroups(storedGroups);
 
-                    // Animate the DOM reorder in-place for smoother movement feedback.
+                    // Animate the DOM reorder in-place before persistence re-renders.
                     animateGroupReorder(optionsContainer, group.name, 'up');
+
+                    suppressSyncGroupsRefresh();
+                    await storeGroups(storedGroups);
 
                     // Only ordering changed, so avoid a full re-match pass.
                     await organiseAllTabs({ arrangeOnly: true });
@@ -1308,10 +1350,12 @@ async function initialiseOptionsDialog() {
                 if (groupIndex < storedGroups.length - 1) {
                     // Swap with the next group
                     [storedGroups[groupIndex + 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex + 1]];
-                    await storeGroups(storedGroups);
 
-                    // Animate the DOM reorder in-place for smoother movement feedback.
+                    // Animate the DOM reorder in-place before persistence re-renders.
                     animateGroupReorder(optionsContainer, group.name, 'down');
+
+                    suppressSyncGroupsRefresh();
+                    await storeGroups(storedGroups);
 
                     // Only ordering changed, so avoid a full re-match pass.
                     await organiseAllTabs({ arrangeOnly: true });

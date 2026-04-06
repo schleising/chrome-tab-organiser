@@ -11,10 +11,10 @@
 
 <body>
   <div class="header">
-    <h1>Options</h1>
+    <h1>Auto Tab Grouper Options</h1>
     <div class="header-actions data-tools-buttons">
-      <button id="export-groups" type="button" class="options-button btn-export btn-icon-only header-icon-button" aria-label="Export Groups" title="Export Groups"></button>
-      <button id="import-groups" type="button" class="options-button btn-import btn-icon-only header-icon-button" aria-label="Import Groups" title="Import Groups"></button>
+      <button id="export-groups" type="button" class="options-button btn-export" aria-label="Export Groups" title="Export Groups">Export</button>
+      <button id="import-groups" type="button" class="options-button btn-import" aria-label="Import Groups" title="Import Groups">Import</button>
     </div>
   </div>
   <div class="data-tools">
@@ -25,7 +25,7 @@
     <div class="new-group-container">
       <h2 id="group-form-title">Create New Group</h2>
       <label for="group-name">Group Name:</label>
-      <input type="text" id="group-name" name="group-name" class="group-input" placeholder="e.g. News" required>
+      <input type="text" id="group-name" name="group-name" class="group-input" placeholder="e.g. News" autofocus required>
       <label for="group-urls">Group Hostname:</label>
       <div class="host-input-row">
         <input type="text" id="group-urls" name="group-urls" class="group-input" placeholder="example.com">

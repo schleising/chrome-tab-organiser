@@ -544,7 +544,7 @@ async function applyPendingTabDraftToForm() {
     const draftResult = await chrome.storage.local.get(PENDING_GROUP_DRAFT_KEY);
     const draft = draftResult?.[PENDING_GROUP_DRAFT_KEY];
     if (!draft || typeof draft.url !== 'string') {
-        return;
+        return false;
     }
 
     const suggestedName = typeof draft.nameSuggestion === 'string' ? draft.nameSuggestion.trim() : '';
@@ -562,6 +562,7 @@ async function applyPendingTabDraftToForm() {
     setDataToolsStatus('Loaded tab into Create New Group.', false);
 
     await chrome.storage.local.remove(PENDING_GROUP_DRAFT_KEY);
+    return true;
 }
 
 function getExportPayload(groups) {
@@ -946,7 +947,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderPendingHostnames();
     setHostnameInputButtonMode(false);
     await initialiseOptionsDialog();
-    await applyPendingTabDraftToForm();
+    const loadedPendingDraft = await applyPendingTabDraftToForm();
+
+    if (!loadedPendingDraft) {
+        const focusGroupName = () => {
+            const groupNameInput = byId('group-name');
+            if (!groupNameInput) {
+                return;
+            }
+
+            window.scrollTo(0, 0);
+            groupNameInput.focus({ preventScroll: true });
+        };
+
+        requestAnimationFrame(focusGroupName);
+        window.addEventListener('focus', focusGroupName, { once: true });
+    }
 
     exportGroupsButton?.addEventListener('click', exportGroupsToJson);
     importGroupsButton?.addEventListener('click', importGroupsFromPicker);

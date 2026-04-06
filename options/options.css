@@ -65,6 +65,9 @@
     /* Dialog */
     --color-dialog-border: rgba(15, 23, 42, 0.06);
     --color-dialog-backdrop: rgba(15, 23, 42, 0.34);
+
+    /* Layout */
+    --layout-max-width: 700px;
 }
 
 body {
@@ -72,7 +75,8 @@ body {
     font-size: 14px;
     color: var(--color-text-primary);
     line-height: 1.4;
-    margin: 0;
+    margin: 0 auto;
+    max-width: var(--layout-max-width);
     padding: 0.85rem;
     background: radial-gradient(circle at 15% -30%, var(--color-page-bg-highlight) 0%, var(--color-page-bg) 56%);
 }

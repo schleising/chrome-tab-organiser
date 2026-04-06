@@ -157,8 +157,23 @@ async function arrangeTabsWithinGroup(windowId, groupId, groupUrls, groupStartIn
         .map((entry) => entry.tab);
 
     for (let i = 0; i < orderedTabs.length; i += 1) {
+        const targetIndex = groupStartIndex + i;
+
+        let currentIndex = orderedTabs[i].index;
         try {
-            await chrome.tabs.move(orderedTabs[i].id, { index: groupStartIndex + i });
+            const liveTab = await chrome.tabs.get(orderedTabs[i].id);
+            currentIndex = liveTab.index;
+        } catch {
+            // If tab disappeared mid-reorder, skip quietly.
+            continue;
+        }
+
+        if (currentIndex === targetIndex) {
+            continue;
+        }
+
+        try {
+            await chrome.tabs.move(orderedTabs[i].id, { index: targetIndex });
         } catch (error) {
             console.error(`Error moving tab ${orderedTabs[i].id} inside group ${groupId}:`, error);
         }

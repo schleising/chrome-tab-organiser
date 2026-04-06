@@ -13,6 +13,7 @@ const MENU_GROUP_PREFIX = 'auto-tab-grouper:group:';
 const PENDING_GROUP_DRAFT_KEY = 'pending_tab_group_draft';
 const MENU_CONTEXTS = ['page', 'action'];
 let contextMenuRebuildInFlight = Promise.resolve();
+const lastProcessedTabUrls = new Map();
 
 function scheduleArrangeTabGroups(windowId) {
     const existingTimer = arrangeTimers.get(windowId);
@@ -197,6 +198,11 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
         return;
     }
 
+    // Avoid reprocessing identical completed URL updates for the same tab.
+    if (lastProcessedTabUrls.get(updatedTabId) === updatedTab.url) {
+        return;
+    }
+
     // Skip any chrome: tabs
     try {
         if (new URL(updatedTab.url).protocol === 'chrome:') {
@@ -220,7 +226,12 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
 
     // Call the organiseTab function to handle the tab grouping logic
     await organiseTab(updatedTabId, updatedTab, storedGroups);
+    lastProcessedTabUrls.set(updatedTabId, updatedTab.url);
 
     // Arrange tab groups after updates settle to avoid repeated churn.
     scheduleArrangeTabGroups(updatedTab.windowId);
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+    lastProcessedTabUrls.delete(tabId);
 });

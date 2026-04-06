@@ -886,8 +886,8 @@ async function initialiseOptionsDialog() {
                 const movedCard = animateGroupReorder(optionsContainer, group.name, 'up');
                 ensureCardStaysVisible(movedCard);
 
-                // Reorganise all tabs in the current window
-                await organiseAllTabs();
+                // Only ordering changed, so avoid a full re-match pass.
+                await organiseAllTabs({ arrangeOnly: true });
             }
         });
 
@@ -922,8 +922,8 @@ async function initialiseOptionsDialog() {
                 const movedCard = animateGroupReorder(optionsContainer, group.name, 'down');
                 ensureCardStaysVisible(movedCard);
 
-                // Reorganise all tabs in the current window
-                await organiseAllTabs();
+                // Only ordering changed, so avoid a full re-match pass.
+                await organiseAllTabs({ arrangeOnly: true });
             }
         });
 
@@ -942,8 +942,16 @@ async function initialiseOptionsDialog() {
 }
 
 // This function will be called to organise all tabs in the current window
-async function organiseAllTabs() {
-    const normalWindows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+async function organiseAllTabs({ arrangeOnly = false, windowIds = null } = {}) {
+    const allNormalWindows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+    const targetWindows = Array.isArray(windowIds)
+        ? allNormalWindows.filter((windowInfo) => windowIds.includes(windowInfo.id))
+        : allNormalWindows;
+
+    if (targetWindows.length === 0) {
+        return;
+    }
+
     const storedGroups = await getStoredGroups();
 
     if (storedGroups.length === 0) {
@@ -951,7 +959,12 @@ async function organiseAllTabs() {
     }
 
     // Iterate through each normal window and organise its tabs.
-    for (const windowInfo of normalWindows) {
+    for (const windowInfo of targetWindows) {
+        if (arrangeOnly) {
+            await arrangeTabGroups(windowInfo.id);
+            continue;
+        }
+
         const allTabs = await chrome.tabs.query({ windowId: windowInfo.id });
 
         for (const tab of allTabs) {

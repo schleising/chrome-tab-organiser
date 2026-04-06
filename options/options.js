@@ -7,6 +7,8 @@ import { storeGroups, getStoredGroups, organiseTab, deleteGroup, arrangeTabGroup
 const ERROR_TIMEOUT_MS = 5000;
 const DEFAULT_GROUP_COLOUR = 'blue';
 const CREATE_GROUP_LABEL = 'Create Group';
+const REORDER_ANIMATION_DURATION_MS = 480;
+const REORDER_ANIMATION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 const byId = (id) => document.querySelector(`#${id}`);
 
@@ -161,6 +163,129 @@ function scrollGroupCardIntoView(groupName) {
     if (targetCard) {
         targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+}
+
+function ensureCardStaysVisible(card) {
+    if (!card) {
+        return;
+    }
+
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function followCardDuringAnimation(card, durationMs) {
+    if (!card) {
+        return;
+    }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        ensureCardStaysVisible(card);
+        return;
+    }
+
+    const VIEWPORT_MARGIN = 56;
+    const MAX_SCROLL_PER_FRAME = 18;
+    const startTime = performance.now();
+
+    const tick = (now) => {
+        const elapsed = now - startTime;
+        const rect = card.getBoundingClientRect();
+
+        if (rect.top < VIEWPORT_MARGIN) {
+            const overflow = VIEWPORT_MARGIN - rect.top;
+            const delta = Math.min(MAX_SCROLL_PER_FRAME, overflow);
+            window.scrollBy(0, -delta);
+        } else if (rect.bottom > window.innerHeight - VIEWPORT_MARGIN) {
+            const overflow = rect.bottom - (window.innerHeight - VIEWPORT_MARGIN);
+            const delta = Math.min(MAX_SCROLL_PER_FRAME, overflow);
+            window.scrollBy(0, delta);
+        }
+
+        if (elapsed < durationMs + 120) {
+            requestAnimationFrame(tick);
+            return;
+        }
+
+        ensureCardStaysVisible(card);
+    };
+
+    requestAnimationFrame(tick);
+}
+
+function updateReorderButtonStates() {
+    const groupCards = Array.from(document.querySelectorAll('.existing-group'));
+
+    groupCards.forEach((card, index) => {
+        const upButton = card.querySelector('.btn-up');
+        const downButton = card.querySelector('.btn-down');
+
+        if (upButton) {
+            upButton.disabled = index === 0;
+        }
+
+        if (downButton) {
+            downButton.disabled = index === groupCards.length - 1;
+        }
+    });
+}
+
+function animateGroupReorder(container, movedGroupName, direction) {
+    const cards = Array.from(container.querySelectorAll('.existing-group'));
+    const movedIndex = cards.findIndex((card) => card.dataset.groupName === movedGroupName);
+    if (movedIndex === -1) {
+        return null;
+    }
+
+    const targetIndex = direction === 'up' ? movedIndex - 1 : movedIndex + 1;
+    if (targetIndex < 0 || targetIndex >= cards.length) {
+        return null;
+    }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const firstRects = new Map(cards.map((card) => [card, card.getBoundingClientRect()]));
+    const movedCard = cards[movedIndex];
+
+    if (direction === 'up') {
+        container.insertBefore(movedCard, cards[targetIndex]);
+    } else {
+        container.insertBefore(cards[targetIndex], movedCard);
+    }
+
+    updateReorderButtonStates();
+
+    if (prefersReducedMotion) {
+        return movedCard;
+    }
+
+    const updatedCards = Array.from(container.querySelectorAll('.existing-group'));
+    updatedCards.forEach((card) => {
+        const firstRect = firstRects.get(card);
+        if (!firstRect) {
+            return;
+        }
+
+        const lastRect = card.getBoundingClientRect();
+        const translateY = firstRect.top - lastRect.top;
+
+        if (translateY !== 0) {
+            card.animate(
+                [
+                    { transform: `translateY(${translateY}px)` },
+                    { transform: 'translateY(0)' }
+                ],
+                {
+                    duration: REORDER_ANIMATION_DURATION_MS,
+                    easing: REORDER_ANIMATION_EASING,
+                    fill: 'both'
+                }
+            );
+        }
+    });
+
+    followCardDuringAnimation(movedCard, REORDER_ANIMATION_DURATION_MS);
+
+    return movedCard;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -448,9 +573,9 @@ async function initialiseOptionsDialog() {
                 [storedGroups[groupIndex - 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex - 1]];
                 await storeGroups(storedGroups);
 
-                // Refresh the options UI
-                await initialiseOptionsDialog();
-                scrollGroupCardIntoView(group.name);
+                // Animate the DOM reorder in-place for smoother movement feedback.
+                const movedCard = animateGroupReorder(optionsContainer, group.name, 'up');
+                ensureCardStaysVisible(movedCard);
 
                 // Reorganise all tabs in the current window
                 await organiseAllTabs();
@@ -484,9 +609,9 @@ async function initialiseOptionsDialog() {
                 [storedGroups[groupIndex + 1], storedGroups[groupIndex]] = [storedGroups[groupIndex], storedGroups[groupIndex + 1]];
                 await storeGroups(storedGroups);
 
-                // Refresh the options UI
-                await initialiseOptionsDialog();
-                scrollGroupCardIntoView(group.name);
+                // Animate the DOM reorder in-place for smoother movement feedback.
+                const movedCard = animateGroupReorder(optionsContainer, group.name, 'down');
+                ensureCardStaysVisible(movedCard);
 
                 // Reorganise all tabs in the current window
                 await organiseAllTabs();

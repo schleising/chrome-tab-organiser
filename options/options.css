@@ -1,21 +1,84 @@
 :root {
-    --bg: #eff3f7;
-    --card: #ffffff;
-    --text: #0f172a;
-    --muted: #4b5563;
-    --line: #d8dee7;
-    --teal: #0aa7a7;
-    --teal-dark: #078f8f;
+    /* Core */
+    --white: #ffffff;
+    --transparent: transparent;
+
+    /* Page and surfaces */
+    --color-page-bg: #eff3f7;
+    --color-page-bg-highlight: #f8fbff;
+    --color-surface-card: #ffffff;
+    --color-shadow-card: rgba(15, 23, 42, 0.08);
+
+    /* Text */
+    --color-text-primary: #0f172a;
+    --color-text-strong: #111;
+    --color-text-muted: #4b5563;
+    --color-text-hint: #475569;
+
+    /* Borders and focus */
+    --color-border-default: #d8dee7;
+    --color-border-strong: #9aa3b2;
+    --color-border-card: rgba(15, 23, 42, 0.07);
+    --color-focus-ring: rgba(10, 167, 167, 0.16);
+
+    /* Accent */
+    --color-accent: #0aa7a7;
+    --color-accent-strong: #078f8f;
+
+    /* Host chips */
+    --color-host-chip-bg: #eef2f8;
+    --color-host-chip-border: #d4dbe6;
+    --color-host-chip-remove-bg: #d8dee9;
+    --color-icon-default: #1f2937;
+    --color-feedback-error: #b91c1c;
+
+    /* Buttons */
+    --color-button-primary-bg: #2f80d8;
+    --color-button-primary-shadow: rgba(47, 128, 216, 0.25);
+    --color-button-header-start: #11b6b5;
+    --color-button-header-end: #0aa7a7;
+    --color-button-header-shadow: rgba(10, 167, 167, 0.35);
+    --color-button-neutral-bg: #f2f4f7;
+    --color-button-neutral-text: #111827;
+    --color-button-neutral-border: #cfd6df;
+    --color-button-edit-bg: #ecf9f8;
+    --color-button-edit-text: #0c7f7d;
+    --color-button-edit-border: #6bbdbb;
+    --color-button-arrow-bg: #f3f4f6;
+
+    /* Group colors */
+    --blue: rgb(56, 113, 224);
+    --red: rgb(200, 64, 49);
+    --yellow: rgb(238, 174, 60);
+    --green: rgb(60, 126, 64);
+    --pink: rgb(191, 48, 130);
+    --purple: rgb(149, 71, 233);
+    --cyan: rgb(52, 119, 127);
+    --orange: rgb(231, 146, 78);
+    --grey: rgb(96, 99, 103);
+    --blue-tint: #e8eefc;
+    --red-tint: #fdeceb;
+    --yellow-tint: #fff6df;
+    --green-tint: #e9f5ea;
+    --pink-tint: #fdeaf5;
+    --purple-tint: #f2eafd;
+    --cyan-tint: #e8f4f6;
+    --orange-tint: #fef1e6;
+    --grey-tint: #edf0f3;
+
+    /* Dialog */
+    --color-dialog-border: rgba(15, 23, 42, 0.06);
+    --color-dialog-backdrop: rgba(15, 23, 42, 0.34);
 }
 
 body {
     font-family: 'Roboto', system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
-    color: var(--text);
+    color: var(--color-text-primary);
     line-height: 1.4;
     margin: 0;
     padding: 0.85rem;
-    background: radial-gradient(circle at 15% -30%, #f8fbff 0%, var(--bg) 56%);
+    background: radial-gradient(circle at 15% -30%, var(--color-page-bg-highlight) 0%, var(--color-page-bg) 56%);
 }
 
 .header {
@@ -36,10 +99,10 @@ body {
 .existing-group,
 .dialog-container {
     width: 100%;
-    border: 1px solid rgba(15, 23, 42, 0.07);
+    border: 1px solid var(--color-border-card);
     border-radius: 0.9rem;
-    background-color: var(--card);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    background-color: var(--color-surface-card);
+    box-shadow: 0 10px 24px var(--color-shadow-card);
 }
 
 .new-group {
@@ -63,7 +126,7 @@ body {
 }
 
 label {
-    color: var(--text);
+    color: var(--color-text-primary);
     font-size: 1rem;
 }
 
@@ -71,10 +134,10 @@ label {
 .group-colour-select {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #9aa3b2;
+    border: 1px solid var(--color-border-strong);
     border-radius: 0.55rem;
-    background: #fff;
-    color: #111;
+    background: var(--white);
+    color: var(--color-text-strong);
     padding: 0.5rem 0.7rem;
     font-size: 1rem;
 }
@@ -105,7 +168,7 @@ label {
 
 .field-hint {
     margin: -0.1rem 0 0;
-    color: #475569;
+    color: var(--color-text-hint);
     font-size: 0.83rem;
 }
 
@@ -113,9 +176,9 @@ label {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: #eef2f8;
-    border: 1px solid #d4dbe6;
-    color: #0f172a;
+    background: var(--color-host-chip-bg);
+    border: 1px solid var(--color-host-chip-border);
+    color: var(--color-text-primary);
     border-radius: 999px;
     padding: 0.2rem 0.35rem 0.2rem 0.6rem;
     font-size: 0.92rem;
@@ -130,8 +193,8 @@ label {
     height: 1.2rem;
     border: none;
     border-radius: 50%;
-    background: #d8dee9;
-    color: #1f2937;
+    background: var(--color-host-chip-remove-bg);
+    color: var(--color-icon-default);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -142,10 +205,10 @@ label {
 
 /* Keep the selected colour control neutral so the colour dot stays readable */
 #group-colour > .options-button {
-    background: #fff;
-    color: #111;
+    background: var(--white);
+    color: var(--color-text-strong);
     box-shadow: none;
-    border: 1px solid #9aa3b2;
+    border: 1px solid var(--color-border-strong);
     display: inline-flex;
     align-items: center;
     line-height: 1;
@@ -161,8 +224,8 @@ label {
 .group-input:focus,
 .group-colour-select:focus {
     outline: none;
-    border-color: var(--teal-dark);
-    box-shadow: 0 0 0 3px rgba(10, 167, 167, 0.16);
+    border-color: var(--color-accent-strong);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .group-buttons {
@@ -190,7 +253,7 @@ label {
     align-items: center;
     justify-content: space-between;
     padding: 0.5rem 0.75rem;
-    border-top: 3px solid transparent;
+    border-top: 3px solid var(--transparent);
 }
 
 .existing-group-header h3 {
@@ -201,14 +264,14 @@ label {
 .group-colour {
     margin: 0;
     text-align: right;
-    color: var(--text);
+    color: var(--color-text-primary);
     font-size: 1rem;
     font-weight: 500;
 }
 
 .existing-group ul {
     margin: 0.5rem 0 0.5rem 2.2rem;
-    color: #0f172a;
+    color: var(--color-text-primary);
     font-size: 1rem;
 }
 
@@ -237,23 +300,23 @@ label {
 }
 
 .error-message {
-    color: #b91c1c;
+    color: var(--color-feedback-error);
     font-weight: 700;
 }
 
 .options-button,
 .group-colour-select {
-    border: 1px solid var(--line);
+    border: 1px solid var(--color-border-default);
     border-radius: 0.55rem;
     padding: 0.35rem 0.7rem;
 }
 
 .options-button {
-    background: #2f80d8;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    color: var(--white);
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 3px 8px rgba(47, 128, 216, 0.25);
+    box-shadow: 0 3px 8px var(--color-button-primary-shadow);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -295,58 +358,85 @@ label {
 
 /* Inline SVG icons */
 .btn-organise::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18M3 6h12M3 18h8'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18M3 6h12M3 18h8'/%3E%3C/svg%3E");
 }
 
 .btn-create::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
 }
 
 .btn-add::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
 }
 
 .btn-save::before,
 .btn-ok::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
 }
 
 .btn-cancel::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
 }
 
 .btn-delete::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M8 6V4h8v2M9 10v7M15 10v7M6 6l1 14h10l1-14'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M8 6V4h8v2M9 10v7M15 10v7M6 6l1 14h10l1-14'/%3E%3C/svg%3E");
 }
 
 .btn-edit::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c7f7d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z'/%3E%3C/svg%3E");
 }
 
 .btn-up::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2937' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
 }
 
 .btn-down::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2937' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Force white SVG icons only where requested */
+.header .btn-organise::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18M3 6h12M3 18h8'/%3E%3C/svg%3E");
+}
+
+.new-group .btn-add::before,
+.new-group .btn-create::before,
+.new-group .btn-save::before,
+.new-group .btn-cancel::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+}
+
+.new-group .btn-save::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+.new-group .btn-cancel::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
 }
 
 .header .options-button {
-    background: linear-gradient(180deg, #11b6b5, #0aa7a7);
-    box-shadow: 0 4px 12px rgba(10, 167, 167, 0.35);
+    background: var(--color-button-primary-bg);
+    color: var(--white);
+    box-shadow: 0 3px 8px var(--color-button-primary-shadow);
+}
+
+/* Keep Create New Group action icons/text high contrast */
+.new-group .host-input-row .options-button,
+.new-group .group-buttons .options-button {
+    color: var(--white);
 }
 
 .edit-delete-buttons .options-button {
-    background: #f2f4f7;
-    color: #111827;
+    background: var(--color-button-neutral-bg);
+    color: var(--color-button-neutral-text);
     box-shadow: none;
-    border-color: #cfd6df;
+    border-color: var(--color-button-neutral-border);
 }
 
 .edit-delete-buttons .options-button + .options-button {
-    background: #ecf9f8;
-    color: #0c7f7d;
-    border-color: #6bbdbb;
+    background: var(--color-button-edit-bg);
+    color: var(--color-button-edit-text);
+    border-color: var(--color-button-edit-border);
 }
 
 .up-down-buttons .options-button {
@@ -357,9 +447,9 @@ label {
     justify-content: center;
     padding: 0;
     font-weight: 800;
-    background: #f3f4f6;
-    color: #1f2937;
-    border-color: #cfd6df;
+    background: var(--color-button-arrow-bg);
+    color: var(--color-icon-default);
+    border-color: var(--color-button-neutral-border);
     box-shadow: none;
 }
 
@@ -394,35 +484,35 @@ select,
 }
 
 /* Dot text colours and header accents for group colours */
-.blue { color: rgb(56, 113, 224); }
-.red { color: rgb(200, 64, 49); }
-.yellow { color: rgb(238, 174, 60); }
-.green { color: rgb(60, 126, 64); }
-.pink { color: rgb(191, 48, 130); }
-.purple { color: rgb(149, 71, 233); }
-.cyan { color: rgb(52, 119, 127); }
-.orange { color: rgb(231, 146, 78); }
-.grey { color: rgb(96, 99, 103); }
+.blue { color: var(--blue); }
+.red { color: var(--red); }
+.yellow { color: var(--yellow); }
+.green { color: var(--green); }
+.pink { color: var(--pink); }
+.purple { color: var(--purple); }
+.cyan { color: var(--cyan); }
+.orange { color: var(--orange); }
+.grey { color: var(--grey); }
 
-.existing-group.blue .existing-group-header { background: #e8eefc; border-top-color: rgb(56, 113, 224); }
-.existing-group.red .existing-group-header { background: #fdeceb; border-top-color: rgb(200, 64, 49); }
-.existing-group.yellow .existing-group-header { background: #fff6df; border-top-color: rgb(238, 174, 60); }
-.existing-group.green .existing-group-header { background: #e9f5ea; border-top-color: rgb(60, 126, 64); }
-.existing-group.pink .existing-group-header { background: #fdeaf5; border-top-color: rgb(191, 48, 130); }
-.existing-group.purple .existing-group-header { background: #f2eafd; border-top-color: rgb(149, 71, 233); }
-.existing-group.cyan .existing-group-header { background: #e8f4f6; border-top-color: rgb(52, 119, 127); }
-.existing-group.orange .existing-group-header { background: #fef1e6; border-top-color: rgb(231, 146, 78); }
-.existing-group.grey .existing-group-header { background: #edf0f3; border-top-color: rgb(96, 99, 103); }
+.existing-group.blue .existing-group-header { background: var(--blue-tint); border-top-color: var(--blue); }
+.existing-group.red .existing-group-header { background: var(--red-tint); border-top-color: var(--red); }
+.existing-group.yellow .existing-group-header { background: var(--yellow-tint); border-top-color: var(--yellow); }
+.existing-group.green .existing-group-header { background: var(--green-tint); border-top-color: var(--green); }
+.existing-group.pink .existing-group-header { background: var(--pink-tint); border-top-color: var(--pink); }
+.existing-group.purple .existing-group-header { background: var(--purple-tint); border-top-color: var(--purple); }
+.existing-group.cyan .existing-group-header { background: var(--cyan-tint); border-top-color: var(--cyan); }
+.existing-group.orange .existing-group-header { background: var(--orange-tint); border-top-color: var(--orange); }
+.existing-group.grey .existing-group-header { background: var(--grey-tint); border-top-color: var(--grey); }
 
 dialog {
-    border: 1px solid rgba(15, 23, 42, 0.06);
+    border: 1px solid var(--color-dialog-border);
     border-radius: 0.8rem;
-    background-color: transparent;
+    background-color: var(--transparent);
     padding: 0;
 }
 
 dialog::backdrop {
-    background: rgba(15, 23, 42, 0.34);
+    background: var(--color-dialog-backdrop);
 }
 
 .dialog-buttons {

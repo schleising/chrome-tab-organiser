@@ -32,6 +32,73 @@ function getCachedRegex(groupEntry) {
     return compiledRegex;
 }
 
+function getMatchBucketIndex(groupUrls, tabUrl) {
+    if (!tabUrl) {
+        return Number.MAX_SAFE_INTEGER;
+    }
+
+    const normalizedUrl = tabUrl.toLowerCase();
+
+    for (let i = 0; i < groupUrls.length; i += 1) {
+        const groupEntry = groupUrls[i].trim();
+        if (!groupEntry) {
+            continue;
+        }
+
+        if (groupEntry.startsWith('re:') || (groupEntry.startsWith('/') && groupEntry.lastIndexOf('/') > 0)) {
+            const matcher = getCachedRegex(groupEntry);
+            if (matcher?.test(tabUrl)) {
+                return i;
+            }
+            continue;
+        }
+
+        if (normalizedUrl.includes(groupEntry.toLowerCase())) {
+            return i;
+        }
+    }
+
+    return Number.MAX_SAFE_INTEGER;
+}
+
+async function arrangeTabsWithinGroup(windowId, groupId, groupUrls, groupStartIndex) {
+    let tabsInGroup;
+    try {
+        tabsInGroup = await chrome.tabs.query({ groupId, windowId });
+    } catch (error) {
+        console.error(`Error querying tabs in group ${groupId} for intra-group arrange:`, error);
+        return;
+    }
+
+    if (tabsInGroup.length < 2) {
+        return;
+    }
+
+    const orderedTabs = tabsInGroup
+        .slice()
+        .sort((a, b) => a.index - b.index)
+        .map((tab, originalOrder) => ({
+            tab,
+            originalOrder,
+            bucket: getMatchBucketIndex(groupUrls, tab.url)
+        }))
+        .sort((a, b) => {
+            if (a.bucket !== b.bucket) {
+                return a.bucket - b.bucket;
+            }
+            return a.originalOrder - b.originalOrder;
+        })
+        .map((entry) => entry.tab);
+
+    for (let i = 0; i < orderedTabs.length; i += 1) {
+        try {
+            await chrome.tabs.move(orderedTabs[i].id, { index: groupStartIndex + i });
+        } catch (error) {
+            console.error(`Error moving tab ${orderedTabs[i].id} inside group ${groupId}:`, error);
+        }
+    }
+}
+
 // Function to store groups in local storage
 /** * 
  * @param {StoredGroup[]} groups - An array of stored groups to save
@@ -347,6 +414,26 @@ export async function arrangeTabGroups(windowId = chrome.windows.WINDOW_ID_CURRE
                 continue;
             }
         }
+    }
+
+    // Within each group, keep tabs clustered by the URL pattern they matched.
+    for (const groupId of sortedGroupIds) {
+        const targetGroup = groupIndices[groupId];
+        if (!targetGroup) {
+            continue;
+        }
+
+        const tabGroup = tabGroups.find((group) => group.id === groupId);
+        if (!tabGroup) {
+            continue;
+        }
+
+        const matchingStoredGroup = storedGroups.find((group) => group.name === tabGroup.title);
+        if (!matchingStoredGroup) {
+            continue;
+        }
+
+        await arrangeTabsWithinGroup(windowId, groupId, matchingStoredGroup.urls, targetGroup.start);
     }
 
     // Delete any empty groups

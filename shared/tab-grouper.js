@@ -248,7 +248,9 @@ export async function getStoredGroups() {
 }
 
 // Add a listener for tab updates
-export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride = null) {
+export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride = null, options = {}) {
+    const { skipUngroupedReposition = false } = options;
+
     // Get the stored groups from local storage
     /** @type {StoredGroup[]} */
     const storedGroups = storedGroupsOverride ?? await getStoredGroups();
@@ -278,35 +280,37 @@ export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride
             }
         }
 
-        // Get all tabs in the current window
-        let allTabs;
-        try {
-            allTabs = await chrome.tabs.query({ windowId: updatedTab.windowId });
-        } catch (error) {
-            console.error(`Error querying tabs in current window ${updatedTab.url}:`, error);
-            return;
-        }
-
-        // Get the maximum index of tabs which are in a group
-        const maxIndex = allTabs.reduce((max, tab) => {
-            return tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? Math.max(max, tab.index) : max;
-        }, -1);
-
-        // If the current tab index is less than or equal to the maximum index, move it to the end
-        if (updatedTab.index <= maxIndex) {
+        if (!skipUngroupedReposition) {
+            // Get all tabs in the current window
+            let allTabs;
             try {
-                await chrome.tabs.move(updatedTabId, {
-                    index: -1 // Move to the end of the tab list
-                });
+                allTabs = await chrome.tabs.query({ windowId: updatedTab.windowId });
             } catch (error) {
-                // If the move fails, retry after a short delay
-                await new Promise(resolve => setTimeout(resolve, 100));
+                console.error(`Error querying tabs in current window ${updatedTab.url}:`, error);
+                return;
+            }
+
+            // Get the maximum index of tabs which are in a group
+            const maxIndex = allTabs.reduce((max, tab) => {
+                return tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? Math.max(max, tab.index) : max;
+            }, -1);
+
+            // If the current tab index is less than or equal to the maximum index, move it to the end
+            if (updatedTab.index <= maxIndex) {
                 try {
                     await chrome.tabs.move(updatedTabId, {
                         index: -1 // Move to the end of the tab list
                     });
-                } catch (retryError) {
-                    console.error(`Retry failed for moving tab ${updatedTab.url} to the end:`, retryError);
+                } catch (error) {
+                    // If the move fails, retry after a short delay
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    try {
+                        await chrome.tabs.move(updatedTabId, {
+                            index: -1 // Move to the end of the tab list
+                        });
+                    } catch (retryError) {
+                        console.error(`Retry failed for moving tab ${updatedTab.url} to the end:`, retryError);
+                    }
                 }
             }
         }
@@ -396,29 +400,6 @@ export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride
         }
     }
 
-    // If the group is newly created, move it to the end of the tab list
-    if (expectedGroupId === null) {
-        // Get all tabs in the current window
-        try {
-            const allTabs = await chrome.tabs.query({ windowId: updatedTab.windowId });
-
-            // Find the maximum index of tabs which are in a group
-            const maxIndex = allTabs.reduce((max, tab) => {
-                return tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? Math.max(max, tab.index) : max;
-            }, -1);
-
-            try {
-                // Move the new group to the end of the tab list
-                await chrome.tabGroups.move(newGroupId, { index: maxIndex + 1 });
-            } catch (error) {
-                console.error(`Error moving new group ${storedGroup.name} to the end of the tab list:`, error);
-                return;
-            }
-        } catch (error) {
-            console.error(`Error querying tabs in current window for grouping ${updatedTab.url}:`, error);
-            return;
-        }
-    }
 }
 
 // Function to calculate the start and end indices for each tab group and move them to make them contiguous

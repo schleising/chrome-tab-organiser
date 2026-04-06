@@ -12,8 +12,10 @@ const MENU_NEW_GROUP_ID = 'auto-tab-grouper:new-group';
 const MENU_GROUP_PREFIX = 'auto-tab-grouper:group:';
 const PENDING_GROUP_DRAFT_KEY = 'pending_tab_group_draft';
 const MENU_CONTEXTS = ['page', 'action'];
+const NEW_TAB_GROUP_GRACE_MS = 1800;
 let contextMenuRebuildInFlight = Promise.resolve();
 const lastProcessedTabUrls = new Map();
+const recentCreatedTabs = new Map();
 
 function scheduleArrangeTabGroups(windowId) {
     const existingTimer = arrangeTimers.get(windowId);
@@ -215,6 +217,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // Ensure menus exist whenever the service worker spins up, not only on install/startup events.
 void queueContextMenuRebuild();
 
+chrome.tabs.onCreated.addListener((tab) => {
+    if (tab?.id !== undefined) {
+        recentCreatedTabs.set(tab.id, Date.now());
+    }
+});
+
 // Add a listener for tab updates
 chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) => {
     try {
@@ -260,9 +268,24 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
             return;
         }
 
+        let skipUngroupedReposition = false;
+        const createdAt = recentCreatedTabs.get(updatedTabId);
+        if (typeof createdAt === 'number') {
+            const ageMs = Date.now() - createdAt;
+            if (ageMs <= NEW_TAB_GROUP_GRACE_MS) {
+                skipUngroupedReposition = true;
+            } else {
+                recentCreatedTabs.delete(updatedTabId);
+            }
+        }
+
         // Call the organiseTab function to handle the tab grouping logic
-        await organiseTab(updatedTabId, updatedTab, storedGroups);
+        await organiseTab(updatedTabId, updatedTab, storedGroups, { skipUngroupedReposition });
         lastProcessedTabUrls.set(updatedTabId, updatedTab.url);
+
+        if (!skipUngroupedReposition) {
+            recentCreatedTabs.delete(updatedTabId);
+        }
 
         // Arrange tab groups after updates settle to avoid repeated churn.
         scheduleArrangeTabGroups(updatedTab.windowId);
@@ -278,4 +301,5 @@ chrome.tabs.onUpdated.addListener(async (updatedTabId, changeInfo, updatedTab) =
 
 chrome.tabs.onRemoved.addListener((tabId) => {
     lastProcessedTabUrls.delete(tabId);
+    recentCreatedTabs.delete(tabId);
 });

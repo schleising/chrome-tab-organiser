@@ -855,39 +855,36 @@ async function initialiseOptionsDialog() {
 
 // This function will be called to organise all tabs in the current window
 async function organiseAllTabs() {
-    // Get all tabs in the current window
-    const allTabs = await chrome.tabs.query({ currentWindow: true });
+    const normalWindows = await chrome.windows.getAll({ windowTypes: ['normal'] });
 
-    // Iterate through each tab and organise it
-    for (const tab of allTabs) {
-        if (!tab.url) {
-            continue;
+    // Iterate through each normal window and organise its tabs.
+    for (const windowInfo of normalWindows) {
+        const allTabs = await chrome.tabs.query({ windowId: windowInfo.id });
+
+        for (const tab of allTabs) {
+            if (!tab.url) {
+                continue;
+            }
+
+            // Skip any chrome: tabs
+            let tabUrl;
+            try {
+                tabUrl = new URL(tab.url);
+            } catch {
+                continue;
+            }
+
+            if (tabUrl.protocol === 'chrome:') {
+                continue;
+            }
+
+            // Call the organiseTab function to handle the tab grouping logic
+            await organiseTab(tab.id, tab);
         }
 
-        // Skip any chrome: tabs
-        let tabUrl;
-        try {
-            tabUrl = new URL(tab.url);
-        } catch {
-            continue;
-        }
-
-        if (tabUrl.protocol === 'chrome:') {
-            continue;
-        }
-
-        // Skip if the window type is not normal
-        const windowInfo = await chrome.windows.get(tab.windowId);
-        if (windowInfo.type !== 'normal') {
-            continue;
-        }
-
-        // Call the organiseTab function to handle the tab grouping logic
-        await organiseTab(tab.id, tab);
+        // After organising tabs in this window, arrange that window's groups.
+        await arrangeTabGroups(windowInfo.id);
     }
-
-    // After organising all tabs, arrange the tab groups
-    await arrangeTabGroups(null);
 }
 
 // Add an event listener for the "Organise All Tabs" button

@@ -715,50 +715,6 @@ function ensureGroupCardStaysVisible(groupName) {
     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function followCardDuringAnimation(card, durationMs) {
-    if (!card) {
-        return;
-    }
-
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
-        ensureCardStaysVisible(card);
-        return;
-    }
-
-    const VIEWPORT_MARGIN = 56;
-    const MAX_SCROLL_PER_FRAME = 18;
-    const startTime = performance.now();
-
-    const tick = (now) => {
-        if (!card.isConnected) {
-            return;
-        }
-
-        const elapsed = now - startTime;
-        const rect = card.getBoundingClientRect();
-
-        if (rect.top < VIEWPORT_MARGIN) {
-            const overflow = VIEWPORT_MARGIN - rect.top;
-            const delta = Math.min(MAX_SCROLL_PER_FRAME, overflow);
-            window.scrollBy(0, -delta);
-        } else if (rect.bottom > window.innerHeight - VIEWPORT_MARGIN) {
-            const overflow = rect.bottom - (window.innerHeight - VIEWPORT_MARGIN);
-            const delta = Math.min(MAX_SCROLL_PER_FRAME, overflow);
-            window.scrollBy(0, delta);
-        }
-
-        if (elapsed < durationMs + 120) {
-            requestAnimationFrame(tick);
-            return;
-        }
-
-        ensureCardStaysVisible(card);
-    };
-
-    requestAnimationFrame(tick);
-}
-
 function followGroupDuringAnimation(groupName, durationMs) {
     if (!groupName) {
         return;

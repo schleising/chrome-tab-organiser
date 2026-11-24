@@ -155,6 +155,83 @@ function getMatchBucketIndex(groupUrls, tabUrl) {
     return bestBucketIndex;
 }
 
+function groupTabsAreContiguous(tabs) {
+    if (tabs.length <= 1) {
+        return true;
+    }
+
+    const indexes = tabs.map((tab) => tab.index);
+    const firstIndex = Math.min(...indexes);
+    const lastIndex = Math.max(...indexes);
+    return lastIndex - firstIndex + 1 === tabs.length;
+}
+
+// Final strip index for `tabIndex` so it lands after every existing group tab
+// in an earlier URL bucket, and after existing tabs in the same bucket.
+// Within a bucket, newer tabs follow tabs that are already in the group, which
+// matches the order arrangeTabsWithinGroup settles on.
+function getGroupInsertionIndex(tabIndex, otherTabs, groupUrls, tabUrl) {
+    if (otherTabs.length === 0) {
+        return tabIndex;
+    }
+
+    const orderedOthers = otherTabs.slice().sort((a, b) => a.index - b.index);
+    const newBucket = getMatchBucketIndex(groupUrls, tabUrl);
+    let insertAt = 0;
+    for (const other of orderedOthers) {
+        if (getMatchBucketIndex(groupUrls, other.url) <= newBucket) {
+            insertAt += 1;
+        }
+    }
+
+    const targetIndex = insertAt >= orderedOthers.length
+        ? orderedOthers[orderedOthers.length - 1].index + 1
+        : orderedOthers[insertAt].index;
+
+    // A tab moving from the left vacates a slot and shifts this index down.
+    return tabIndex < targetIndex ? targetIndex - 1 : targetIndex;
+}
+
+async function moveTabToGroupInsertionIndex(tabId, tab, groupId, groupUrls, { onlyIfContiguous = false } = {}) {
+    let tabsInGroup;
+    try {
+        tabsInGroup = await chrome.tabs.query({
+            windowId: tab.windowId,
+            groupId
+        });
+    } catch (error) {
+        console.error(`Error querying tabs in group ${groupId} before positioning tab ${tabId}:`, error);
+        return;
+    }
+
+    const otherTabs = tabsInGroup.filter((groupTab) => groupTab.id !== tabId);
+    if (otherTabs.length === 0) {
+        return;
+    }
+
+    if (onlyIfContiguous && !groupTabsAreContiguous(otherTabs)) {
+        return;
+    }
+
+    let liveTab;
+    try {
+        liveTab = await chrome.tabs.get(tabId);
+    } catch {
+        return;
+    }
+
+    const targetIndex = getGroupInsertionIndex(liveTab.index, otherTabs, groupUrls, tab.url);
+    if (liveTab.index === targetIndex) {
+        return;
+    }
+
+    try {
+        await chrome.tabs.move(tabId, { index: targetIndex });
+    } catch (error) {
+        console.error(`Error moving tab ${tab.url} to index ${targetIndex} in group ${groupId}:`, error);
+    }
+}
+
 async function arrangeTabsWithinGroup(windowId, groupId, groupUrls, groupStartIndex) {
     let tabsInGroup;
     try {
@@ -338,6 +415,16 @@ export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride
 
     // Get the initial group ID of the updated tab
     const initialGroupId = updatedTab.groupId;
+    const joiningExistingGroup = expectedGroupId !== null && initialGroupId !== expectedGroupId;
+
+    // Chrome appends a tab to the near edge of a group when grouping it. Move to
+    // the final intra-group index first so that join does not park the tab on
+    // the right edge and a later arrange pass slides it again.
+    if (joiningExistingGroup) {
+        await moveTabToGroupInsertionIndex(updatedTabId, updatedTab, expectedGroupId, storedGroup.urls, {
+            onlyIfContiguous: true
+        });
+    }
 
     // Group the tab if it is not already in the correct group
     let newGroupId;
@@ -379,25 +466,11 @@ export async function organiseTab(updatedTabId, updatedTab, storedGroupsOverride
         return;
     }
 
-    // If the initial group ID is not the same as the expected group ID, move the tab to the end of the new group
-    if (initialGroupId !== expectedGroupId) {
-        try {
-            const tabsInGroup = await chrome.tabs.query({
-                windowId: updatedTab.windowId,
-                groupId: newGroupId
-            });
-            if (tabsInGroup.length > 0) {
-                const lastTabIndex = Math.max(...tabsInGroup.map(tab => tab.index));
-                try {
-                    await chrome.tabs.move(updatedTabId, { index: lastTabIndex });
-                } catch (error) {
-                    console.error(`Error moving tab ${updatedTab.url} to the end of group ${storedGroup.name}:`, error);
-                }
-            }
-        } catch (error) {
-            console.error(`Error querying tab ${updatedTab.url}:`, error);
-            return;
-        }
+    // Grouping can still leave the tab on the group's edge when it could not be
+    // inserted directly. Pull it to the bucket position now, before the
+    // debounced arrange pass.
+    if (joiningExistingGroup) {
+        await moveTabToGroupInsertionIndex(updatedTabId, updatedTab, newGroupId, storedGroup.urls);
     }
 
 }
